@@ -50,6 +50,12 @@ has to be UDP-based, because streaming and less packets.
 - **joining, leaving politely, recovery from an abrupt departure.**
 	+ polite interruption needs to find new place for all children: one can be replacement, one needs a new place (now kick a parasite)
 	+ keep a bit of a backlog in case of promotions (demotions can cause a stutter, but probably won't cause data loss.)
+	+ a polite way of leaving: descend the tree until no children or only parasites, and then leave ~abruptly
+	+ impolite departures: try to contact grandparent, and do a four-way renegotiation if you can.
+		* otherwise: high priority slot request to bootstrap node, n-parents notify bootstrap nodes of new slot.
+
+- network should be able to form even without a data stream. (when stream comes online, everything is ready)
+	+ pre-register data stream at bootstrap nodes, with expected start time.
 
 ### What if someone drops out rudely.
 
