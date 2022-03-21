@@ -1,7 +1,7 @@
 # Distributed Authenticated Datastream: Overview
 ## Network
 
-Data is passed downs a binary tree, with a source of data at the root. The data shares properties with a live broadcast: e.g. one should be able to join anytime, with one authoritative source and many potentially interested listeners.
+Data is passed downs a tree, with a source of data at the root. The data shares properties with a live broadcast: e.g. one should be able to join anytime, with one authoritative source and many potentially interested listeners.
 
 A trust system is in place to promote the health of the network, placing untrusted nodes closer to the leaves. Trust is gained by providing a high quality rebroadcast. Trust is only one factor in the weight system, allowing for new members of the network to actually gain trust, and for unreliable nodes to regain trust.
 
@@ -41,3 +41,5 @@ has to be UDP-based, because streaming and less packets.
 - Signature size, frequency, guarantee of arrival at same time as data signed.
 - how to handle different bitrates.
 - How/when to drop chunks to allow for lower data transfer rates
+
+## Options
