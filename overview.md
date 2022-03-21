@@ -56,6 +56,7 @@ has to be UDP-based, because streaming and less packets.
 
 - network should be able to form even without a data stream. (when stream comes online, everything is ready)
 	+ pre-register data stream at bootstrap nodes, with expected start time.
+	+ leave for later version
 
 ### What if someone drops out rudely.
 
