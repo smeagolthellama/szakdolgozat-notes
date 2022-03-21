@@ -11,9 +11,13 @@ Nodes should be able to specify how much data they can/want to accept/pass on.
 
  - High latency or low data rate should be handled.
 
-## Message format
+## Message format(s)
 
-A block of data with a signature from the source, and possibly from the nodes previous.
+Downstream: A block of data with a signature from the source, and possibly from the nodes previous.
+
+Upstream: Nodes advertise their load and capability, this data is passed around a bit to keep folks honest, but not too much, to avoid unneeded stress.
+
+Out-of-band: nodes who are joining or leaving communicate with bootstrap nodes, who also communicate with certain other nodes already in the network (to be chosen) to ascertain optimum initial positions. Bootstrap nodes also communicate with each other, but too many bootstrap nodes are more trouble than they solve.
 
 ## Connection timeline
 
@@ -27,7 +31,7 @@ A block of data with a signature from the source, and possibly from the nodes pr
 
 ### mathematical challenges
 
-Given a complete, weighted graph with $(number of clients) nodes, calculate the minimum/optimal spanning binary tree with a given root. 
+Given a complete, weighted graph with $(number of clients) nodes, calculate the minimum/optimal spanning tree with a given root. 
 Update the graph when the weights change, using only local information
 
 ### DDoS protection
@@ -41,5 +45,18 @@ has to be UDP-based, because streaming and less packets.
 - Signature size, frequency, guarantee of arrival at same time as data signed.
 - how to handle different bitrates.
 - How/when to drop chunks to allow for lower data transfer rates
+- data privacy (hide IP address from higher nodes if possible)
 
-## Options
+- **joining, leaving politely, recovery from an abrupt departure.**
+	+ polite interruption needs to find new place for all children: one can be replacement, one needs a new place (now kick a parasite)
+	+ keep a bit of a backlog in case of promotions (demotions can cause a stutter, but probably won't cause data loss.)
+
+### What if someone drops out rudely.
+
+- children connect to bootstrap nodes 
+
+## stuff
+
+- bootstrap nodes: asked about how to connect to a particular data stream, tell IP addr, etc. Told all the juicy gossip about misbehaving nodes. Told about how much capacity is available for each (re)broadcasting node. connected in a ring,
+
+- We are fine with interception, but not modification of data.
