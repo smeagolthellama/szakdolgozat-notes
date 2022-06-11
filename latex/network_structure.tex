@@ -4,7 +4,24 @@ A protokoll központi eleme a hálózat, amely egy fa típusú konfigurációt
 vesz majd fel. A gyökérben található az adatforrás, amíg a gyerekek a
 hallgató közönség.
 
+A fa szerkezetére két lehetőség van, amik között még a tervezés folyamán
+döntést kellene hozni: legyen bináris vagy sem.
+
+Ha a fa bináris, akkor lehet garantálni ennek sok kellemes tulajdonságát,
+amelyek kihasználásával a hálózat elrendezését és a csatlakozási
+folyamatot nagy mértékben lehetne egyszerűsíteni, és ezért gyorsítani is.
+
+Ha a fa nem bináris, akkor a felek egyénileg el tudják dönteni mennyire
+képesek, és így sokkal kevesebb lenne a fa mélysége, vagyis az átlagos
+késés sokat csökkenne, de ekkor több adatot kell több helyre elküldeni,
+ami a protokollt is, a program logikáját is bonyolítaná.
+
 \begin{figure}
 \input{graph}
 \caption{hogyan nézhetne ki a hálózat négy klienssel}
 \end{figure}
+
+A teljes fára nézett átlag késés minimalizálása érdekében, egy
+meritokratikus rangsorolás szerint a jobb hálózati kapcsolattal
+rendelkező kliensek közelebb kerülhetnek a gyökérhez, és így gyorsabban
+továbbadhatják a kapott adatokat az ők klienseiknek.
