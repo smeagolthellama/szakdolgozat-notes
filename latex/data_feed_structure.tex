@@ -1,1 +1,13 @@
 \chapter{Az adatfolyam struktúrája}
+
+A hálózat tagjai között a közvetített adatok bizonyos extra
+metainformációval lesz társítva. Ebben a fejezetben le lesznek ezek írva,
+azzal együtt, hogy miért vannak ott.
+
+Mivel elméletileg a közvetített adat megszakítás nélküli, de a hálózaton
+csomagkapcsolás van, az atatforrás által adott adatokat először bizonyos,
+az adat típusa ismeretében megválasztott méretű csomagokra lesz választva.
+Ezután, az adatok hitelességének garanciája érdekében, a szerver egy
+digitális aláírást számít az adott csomagra, és esetleg egy hash-et is,
+ha szükséges. A szerver aláírása már csatlakozás előtt ismert kell legyen
+a 
