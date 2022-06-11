@@ -24,3 +24,13 @@ aláírás, de ez valahogy mind a k csomagra érvényes kell legyen.
 Mivel több csomag típus is fog létezni, lesz egy mező a csomagokban,
 amely azonosítja, hogy milyen csomag következik: Aláírt, Aláírás-mentes,
 rendezési, vagy hálózatfenntartási.
+
+\section{sorrendjelölő}
+
+Mivel a protokoll UDP alapú lesz, nem létezik garancia arra, hogy
+sorrendben érkeztek-e az csomagok. Egyes esetekben, fontos lehet az
+adatok sorrendbe-helyezése, és erre a célra szolgál a sorrendjelző. 
+Ez a mező nem fogja számon tartani azt, hogy eddig hány csomagot küldött
+a szerver, mivel hosszas közvetítés után a mező mérete impraktikusan nagy
+lenne. Ezért nagyjából csak egy bájt méret lesz erre a szerepre
+félretéve.
