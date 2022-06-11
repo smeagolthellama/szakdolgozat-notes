@@ -4,10 +4,22 @@ A hálózat tagjai között a közvetített adatok bizonyos extra
 metainformációval lesz társítva. Ebben a fejezetben le lesznek ezek írva,
 azzal együtt, hogy miért vannak ott.
 
+\section{Aláírás}
+
 Mivel elméletileg a közvetített adat megszakítás nélküli, de a hálózaton
-csomagkapcsolás van, az atatforrás által adott adatokat először bizonyos,
+csomagkapcsolás van, az adatforrás által adott adatokat először bizonyos,
 az adat típusa ismeretében megválasztott méretű csomagokra lesz választva.
 Ezután, az adatok hitelességének garanciája érdekében, a szerver egy
 digitális aláírást számít az adott csomagra, és esetleg egy hash-et is,
-ha szükséges. A szerver aláírása már csatlakozás előtt ismert kell legyen
-a 
+ha szükséges. A szerver publikus kulcsa már csatlakozás előtt ismert kell
+legyen a kliensek számára, ezért ezt nem közvetítjük, de a csomagok
+méretét már igen.
+
+Megeshet, hogy az adatsebesség miatt nem praktikus minden csomagot
+aláírni, ezért lehetséges az, hogy csak minden k-adik csomaggal társul
+aláírás, de ez valahogy mind a k csomagra érvényes kell legyen.
+
+\section{csomagtípus-azonosító}
+
+Mivel
+több csomag típus is fog létezni, lesz egy 
