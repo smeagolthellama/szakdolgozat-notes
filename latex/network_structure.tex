@@ -4,6 +4,7 @@ A protokoll központi eleme a hálózat, amely egy fa típusú konfigurációt
 vesz majd fel. A gyökérben található az adatforrás, amíg a gyerekek a
 hallgató közönség.
 
+\section{tervezési lehetőségek}
 A fa szerkezetére két lehetőség van, amik között még a tervezés folyamán
 döntést kellene hozni: legyen bináris vagy sem.
 
@@ -22,6 +23,7 @@ ami a protokollt is, a program logikáját is bonyolítaná.
 \end{figure}
 
 A teljes fára nézett átlag késés minimalizálása érdekében, egy
-meritokratikus rangsorolás szerint a jobb hálózati kapcsolattal
-rendelkező kliensek közelebb kerülhetnek a gyökérhez, és így gyorsabban
-továbbadhatják a kapott adatokat az ők klienseiknek.
+meritokratikus rangsorolás szerint, amely a \ref{ch:reorg} fejezetben
+lesz leírva a jobb hálózati kapcsolattal rendelkező kliensek közelebb
+kerülhetnek a gyökérhez, és így gyorsabban továbbadhatják a kapott
+adatokat az ők klienseiknek.
