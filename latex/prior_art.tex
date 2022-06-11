@@ -1,0 +1,31 @@
+\chapter{L\'{e}tez\H{o} komponensek}
+
+\section{Létező peer-to-peer adat-megosztó megoldások}
+
+A létező, népszerű, p2p adat-megosztó megoldások az adat fajtájától
+függően két nagy kategóriába sorolhatóak (amiknek létezik nem üres metszete): 1) Állománymegosztó protokollok
+(mint például a már említett IPFS vagy BitTorrent, vagy akár a croc nevű
+nyitott forráskódú applikáció, vagy a Gnutella protokoll, ami a Morpheus
+és a LimeWire applikációk alapját szolgálta) 2) Instans-üzenet-küldő
+programok (például a tox protokoll, vagy az IRC).
+
+Habár bármilyen adatot amit a számítógép tud kezelni le lehet menteni egy
+állományba, és bizonyos lépéseken keresztül szöveges üzenetekbe is át
+lehet alakítani (például base64 encoding), ezek a protokollok egyszerűen
+nem alkalmasak arra, hogy egy állandóan frissülő adatforrást
+közvetítsenek.
+
+\section{létező peer-to-peer "streaming" megoldások}
+
+Apache kafka: igazából kliens-szerver megoldás, és az adatok
+feldolgozásával/kategorizálásával foglalkozik, nem a kezdeti
+közvetítéssel.
+
+Strivecast\citep{st}: explicit a videó közvetítését szolgálja, a
+WebRTC technológia segítségével. Szükséges szerver, hogy elintézze a
+kezdeti csatlakozást. A peer5 ugyancsak. Ezen felül, ez a szoftver a
+kétirányú kommunikációt helyezi előtérbe, ami sokszor nem fontos.
+
+Seedess: Bittorent alapú, és reklámjai szerint csak csökkenti a szerverek
+terhelését, és ezt is csak 70\%-osan. A példa amit adnak egy
+videóállomány, vagyis nem "élő adás".

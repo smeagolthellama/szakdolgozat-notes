@@ -1,0 +1,79 @@
+\documentclass{article}
+\usepackage[x11names, svgnames, rgb]{xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usetikzlibrary{snakes,arrows,shapes}
+\usepackage{amsmath}
+%
+%
+
+%
+
+%
+
+\begin{document}
+\pagestyle{empty}
+%
+%
+%
+
+\enlargethispage{100cm}
+% Start of code
+% \begin{tikzpicture}[anchor=mid,>=latex',line join=bevel,]
+\begin{tikzpicture}[>=latex',line join=bevel,]
+  \pgfsetlinewidth{1bp}
+%%
+\pgfsetcolor{black}
+  % Edge: server -> client1
+  \draw [->] (62.154bp,52.665bp) .. controls (72.239bp,55.363bp) and (83.764bp,58.445bp)  .. (104.3bp,63.939bp);
+  % Edge: server -> client2
+  \draw [->] (62.154bp,37.335bp) .. controls (72.239bp,34.637bp) and (83.764bp,31.555bp)  .. (104.3bp,26.061bp);
+  % Edge: client1 -> client3
+  \draw [->] (170.13bp,72.0bp) .. controls (178.22bp,72.0bp) and (186.97bp,72.0bp)  .. (205.57bp,72.0bp);
+  % Edge: client2 -> client4
+  \draw [->] (170.13bp,18.0bp) .. controls (178.22bp,18.0bp) and (186.97bp,18.0bp)  .. (205.57bp,18.0bp);
+  % Node: server
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (32.5bp,45.0bp) ellipse (32.49bp and 18.0bp);
+  \draw (32.497bp,45.0bp) node {server};
+\end{scope}
+  % Node: client1
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (135.44bp,72.0bp) ellipse (34.39bp and 18.0bp);
+  \draw (135.44bp,72.0bp) node {client1};
+\end{scope}
+  % Node: client2
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (135.44bp,18.0bp) ellipse (34.39bp and 18.0bp);
+  \draw (135.44bp,18.0bp) node {client2};
+\end{scope}
+  % Node: client3
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (240.34bp,72.0bp) ellipse (34.39bp and 18.0bp);
+  \draw (240.34bp,72.0bp) node {client3};
+\end{scope}
+  % Node: client4
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (240.34bp,18.0bp) ellipse (34.39bp and 18.0bp);
+  \draw (240.34bp,18.0bp) node {client4};
+\end{scope}
+%
+\end{tikzpicture}
+% End of code
+
+%
+\end{document}
+%
+
+
+
