@@ -1,5 +1,8 @@
 \documentclass{ubb_dolgozat}
 \usepackage{definitions}
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Bonum}
+\setsansfont{TeX Gyre Heros}
 
 \submityear{2022}
 \titleHU{Elosztott h\'al\'ozatokon t\"{o}rt\'en\H{o} adatok \'el\H{o} k\"{o}zvet\'it\'es\'ere val\'o protokoll tervez\'ese}
@@ -8,6 +11,8 @@
 transmiserea datelor \^{i}n timp real asupra
 re\c{t}ele ditribuite}
 \author{Gardner Márk}
+
+\newfontfamily\chapterfont{TeX Gyre Bonum}
 
 \begin{document}
 \begin{abstractEN}
@@ -20,6 +25,16 @@ needed infrastructure, security, and non-repudiation of data.
 \tableofcontents
 
 \include{bevezet}
+\include{prior_art}
+\include{network_structure}
+\include{data_feed_structure}
+\include{discovery}
+\include{joining_and_leaving}
+\include{reorganizing}
+\include{reputation}
+\include{future_work}
+\include{bottlenecks}
 
+\bibliographystyle{abbrvnat_hu}
 \bibliography{citations}
 \end{document}
