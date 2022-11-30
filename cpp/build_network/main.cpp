@@ -90,7 +90,7 @@ int main(int argc,char **argv)
 					ok=0;
 				}
 				for(int i=0; i<num_children && ok; i++) {
-					if(from.sin_addr.s_addr==children[i].addr.s_addr && from.sin_port==children[i].port) {
+					if(from.sin_addr.s_addr==children[i].addr.s_addr) {
 						ok=0;
 					}
 				}
