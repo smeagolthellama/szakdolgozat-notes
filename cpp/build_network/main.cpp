@@ -97,7 +97,6 @@ int main(int argc,char **argv)
 				if(ok) {
 					cout<<"Accepted, is child "<<num_children<<endl;
 					children[num_children].addr=from.sin_addr;
-					children[num_children++].port=from.sin_port;
 					SEND("ok",sizeof("ok"));
 				} else {
 					cout<<"Rejected."<<endl;
