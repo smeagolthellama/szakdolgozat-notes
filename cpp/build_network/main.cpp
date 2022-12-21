@@ -42,7 +42,7 @@ int main(int argc,char **argv)
 		queue<in_addr> hosts;
 		for(int i=1; i<argc; i++) {
 			in_addr host;
-			if(!inet_aton(argv[i],&host)) {
+			if(inet_aton(argv[i],&host) == 0) {
 				cerr<<argv[i]<<" was not recognised as an IPv4 address."<<endl;
 			} else {
 				hosts.push(host);
@@ -67,7 +67,7 @@ int main(int argc,char **argv)
 	addr.sin_port = htons(port);
 	addr.sin_addr.s_addr = INADDR_ANY;
 
-	if(bind(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr))) {
+	if(bind(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) != 0) {
 		perror("bind failed");
 		throw errno;
 	}
@@ -92,13 +92,13 @@ int main(int argc,char **argv)
 			SEND(children,sizeof(children));
 		} else if(strcmp(message,"join")==0 || strcmp(message,"join\n")==0) {
 			cerr<<"Join request from "<<ip<<"."<<endl;
-			bool ok=1;
+			bool ok=true;
 			if(num_children==2) {
-				ok=0;
+				ok=false;
 			}
 			for(int i=0; i<num_children && ok; i++) {
 				if(from.sin_addr.s_addr==children[i].addr.s_addr) {
-					ok=0;
+					ok=false;
 				}
 			}
 			if(ok) {
@@ -107,7 +107,7 @@ int main(int argc,char **argv)
 				char reply[sizeof("ok")+sizeof(msg_number)]="ok";
 				memcpy(reply+2,&msg_number,sizeof(msg_number));
 				children[num_children++].addr=from.sin_addr;
-				SEND("ok",sizeof("ok"));
+				SEND(reply,sizeof(reply));
 			} else {
 				cerr<<"Rejected."<<endl;
 				SEND("err",sizeof("err"));
@@ -157,7 +157,7 @@ void joinProcess(uint16_t port,queue<in_addr> &hosts, uint16_t &msg_number, mute
 			if(reply_len==-1) {
 				perror("receipt failed");
 			}
-			if(memcmp(reply,"ok",sizeof("ok"))) {
+			if(memcmp(reply,"ok",sizeof("ok")) != 0) {
 				if(static_cast<size_t>(reply_len)>=sizeof("ok")+sizeof(msg_number)) {
 					lock_guard<mutex> lock(msg_number_guard);
 					memcpy(&msg_number,reply+2,sizeof(msg_number));
