@@ -1,0 +1,9 @@
+name = "build_network"
+description = "Shiny new project"
+version = "0.0.0"
+
+authors = ["Mark Gardner"]
+maintainers = ["Mark Gardner <magardner2010@gmail.com>"]
+maintainers-logins = ["smeagolthellama"]
+
+executables = ["build"]
