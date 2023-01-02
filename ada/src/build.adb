@@ -1,10 +1,7 @@
-with Ada.Text_IO;
-with GNAT.Sockets;
 with Network_Tree;
 
 procedure Build is
-
+   package my_tree_unused is new Network_Tree;
 begin
-   --  Insert code here.
    null;
 end Build;

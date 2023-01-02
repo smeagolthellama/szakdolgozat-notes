@@ -9,5 +9,9 @@ project Build_Network is
       for Vcs_Repository_Root use "../";
    end Ide;
 
+   package Compiler is
+      for Switches ("ada") use ("-gnato", "-fstack-check", "-gnatE", "-g", "-gnata", "-gnatf", "-gnat12", "-gnatVa", "-gnatwa", "-gnatyibdfklno");
+   end Compiler;
+
 end Build_Network;
 
