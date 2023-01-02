@@ -111,18 +111,24 @@ package body Network_Tree is
                      declare
                         number: Child_Number;
                         cSet: Child_Set;
+                        buf: constant Memory_Stream.Stream_Access:=new Memory_Stream.Memory_Buffer_Stream(maxMessageLength);
+                        Child_Address: Sock_Addr_Type:=talker;
                      begin
                         Children.Get_Children(number,cSet);
+                        Memory_Stream.Write(Memory_Stream.Memory_Buffer_Stream(buf.all),msg(msg'First+1..msg'Last));
+                        Port_Type'Read(buf,Child_Address.Port);
                         if number=2 then
                            String'Write(str,"err");
                         else
-                           Children.AddChild(talker);
+                           Children.Add_Child(child => Child_Address);
                            String'Write(str,"ok");
                            Unsigned_16'Write(str,Message_Number);
                         end if;
+                        Memory_Stream.Free(buf);
                      exception
                         when E: Constraint_Error =>
                            String'Write(str,"err");
+                           Memory_Stream.Free(buf);
                            Text_IO.Put_Line("Error when trying to add child: "&Ada.Exceptions.Exception_Message(E));
                      end;
                      when others =>
