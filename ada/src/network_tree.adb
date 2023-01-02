@@ -8,32 +8,32 @@ with Text_IO;
 
 package body Network_Tree is
 
-   type ChildNumber is range 0..2;
-   subtype ChildIndex is ChildNumber range 1..ChildNumber'Last;
+   type Child_Number is range 0..2;
+   subtype Child_Index is Child_Number range 1..Child_Number'Last;
 
-   type ChildSet is array (ChildIndex) of Sock_Addr_Type;
+   type Child_Set is array (Child_Index) of Sock_Addr_Type;
 
    protected Children is
-      entry AddChild(child: Sock_Addr_Type);
-      entry GetChildren(n:out ChildNumber; c:out ChildSet);
-      -- entry RemoveChild
+      entry Add_Child(child: Sock_Addr_Type);
+      entry Get_Children(n:out Child_Number; c:out Child_Set);
+      -- entry Remove_Child
    private
-      number: ChildNumber := 0;
-      set: ChildSet:=(others=>No_Sock_Addr);
+      number: Child_Number := 0;
+      set: Child_Set:=(others=>No_Sock_Addr);
       locked: Boolean:=False;
    end Children;
 
    protected body Children is
-      entry AddChild (child: Sock_Addr_Type)
+      entry Add_Child (child: Sock_Addr_Type)
         when not locked is
       begin
          locked:=True;
          number:=number+1;
          set(number):=child;
          locked:=False;
-      end AddChild;
+      end Add_Child;
 
-      entry GetChildren(n: out ChildNumber; c: out ChildSet)
+      entry Get_Children(n: out Child_Number; c: out Child_Set)
         when not locked is
       begin
          locked:=True;
@@ -46,16 +46,16 @@ package body Network_Tree is
          end if;
          c:=set;
          locked:=False;
-      end GetChildren;
+      end Get_Children;
    end Children;
 
    Message_Number: Unsigned_16:=0;
 
-   task listenRequest is
-      entry newRequest(sock: Socket_Type; address: Sock_Addr_Type; message: Stream_Element_Array; messageLength: Stream_Element_Offset);
-   end listenRequest;
+   task listen_Request is
+      entry new_Request(sock: Socket_Type; address: Sock_Addr_Type; message: Stream_Element_Array; messageLength: Stream_Element_Offset);
+   end listen_Request;
 
-   task body listenRequest is
+   task body listen_Request is
       socket: Socket_Type;
       msg: Stream_Element_Array(1..maxMessageLength);
       msgLen: Stream_Element_Offset;
@@ -64,13 +64,13 @@ package body Network_Tree is
    begin
       loop
          select
-            accept newRequest
+            accept new_Request
               (sock: Socket_Type;address: Sock_Addr_Type; message: Stream_Element_Array; messageLength: Stream_Element_Offset) do
                socket:=sock;
                msg:=message;
                msgLen:=messageLength;
                talker:=address;
-            end newRequest;
+            end new_Request;
             if msgLen>=1 then
                declare
                   flags: constant Unsigned_8:=Unsigned_8(msg(1));
@@ -78,23 +78,23 @@ package body Network_Tree is
                   case flags is
                   when Character'Pos('?') =>
                      declare
-                        number: ChildNumber;
-                        cSet: ChildSet;
+                        number: Child_Number;
+                        cSet: Child_Set;
                         flags: Unsigned_16:=0;
                      begin
-                        Children.GetChildren(number,cSet);
+                        Children.Get_Children(number,cSet);
                         case number is
                         when 0 =>
                            Unsigned_16'Write(str,flags);
                            Unsigned_16'Write(str,0);
-                           ChildSet'Write(str,cSet);
+                           Child_Set'Write(str,cSet);
                         when 1 =>
                            if cSet(1).Family/= Family_Inet then
                               flags:= flags + 1;
                            end if;
                            Unsigned_16'Write(str,flags);
                            Unsigned_16'Write(str,1);
-                           ChildSet'Write(str,cSet);
+                           Child_Set'Write(str,cSet);
                         when 2=>
                            if cSet(1).Family/= Family_Inet then
                               flags:= flags + 1;
@@ -104,15 +104,15 @@ package body Network_Tree is
                            end if;
                            Unsigned_16'Write(str,flags);
                            Unsigned_16'Write(str,2);
-                           ChildSet'Write(str,cSet);
+                           Child_Set'Write(str,cSet);
                         end case;
                      end;
                   when Character'Pos('j') =>
                      declare
-                        number: ChildNumber;
-                        cSet: ChildSet;
+                        number: Child_Number;
+                        cSet: Child_Set;
                      begin
-                        Children.GetChildren(number,cSet);
+                        Children.Get_Children(number,cSet);
                         if number=2 then
                            String'Write(str,"err");
                         else
@@ -121,8 +121,9 @@ package body Network_Tree is
                            Unsigned_16'Write(str,Message_Number);
                         end if;
                      exception
-                        when Constraint_Error =>
+                        when E: Constraint_Error =>
                            String'Write(str,"err");
+                           Text_IO.Put_Line("Error when trying to add child: "&Ada.Exceptions.Exception_Message(E));
                      end;
                      when others =>
                         Message_Number:=Message_Number+1;
@@ -147,7 +148,7 @@ package body Network_Tree is
    exception
       when E: others =>
          text_IO.put_Line("Mesenger thread error:"&Ada.Exceptions.Exception_Message(E));
-   end listenRequest;
+   end listen_Request;
 
    task body Server is
       listeningSocket: Socket_Type;
@@ -164,7 +165,7 @@ package body Network_Tree is
             messageLength: Stream_Element_Offset;
          begin
             Receive_Socket(listeningSocket,message,messageLength,talkingAddress);
-            listenRequest.newRequest(sock=>listeningSocket, address => talkingAddress, message => message, messageLength => messageLength);
+            listen_Request.new_Request(sock=>listeningSocket, address => talkingAddress, message => message, messageLength => messageLength);
          end;
       end loop;
    exception
