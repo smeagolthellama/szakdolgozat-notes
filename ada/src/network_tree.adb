@@ -15,7 +15,6 @@ package body Network_Tree is
 
    protected Children is
       entry AddChild(child: Sock_Addr_Type);
-      pragma Unreferenced (AddChild);
       entry GetChildren(n:out ChildNumber; c:out ChildSet);
       -- entry RemoveChild
    private
