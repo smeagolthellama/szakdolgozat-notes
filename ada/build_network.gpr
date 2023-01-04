@@ -13,5 +13,13 @@ project Build_Network is
       for Switches ("ada") use ("-gnato", "-fstack-check", "-gnatE", "-g", "-gnata", "-gnatf", "-gnat12", "-gnatVa", "-gnatwa", "-gnatyibdfklno");
    end Compiler;
 
+   package Binder is
+      for Switches ("ada") use ("-xdr");
+   end Binder;
+
+   package Linker is
+      for Switches ("ada") use ("-g");
+   end Linker;
+
 end Build_Network;
 

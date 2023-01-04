@@ -6,7 +6,7 @@ generic
    port: in GNAT.Sockets.Port_Type:=10573;
    maxMessageLength: in Ada.Streams.Stream_Element_Offset:=2048;
 package Network_Tree is
-   pragma Assert (Ada.Streams.Stream_Element'Size >= 8);
+   pragma Assert (Ada.Streams.Stream_Element'Size = 8);
 
    package Sock renames GNAT.Sockets;
 
