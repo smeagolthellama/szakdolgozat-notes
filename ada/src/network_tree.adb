@@ -57,12 +57,19 @@ package body Network_Tree is
             return;
          end if;
          status := NotExist;
-         for child_iterator of set loop
-            if child = child_iterator then
-               child_iterator := No_Sock_Addr;
-               status         := Success;
-               exit;
+         for i in set'Range loop
+            if status = Success then
+               if i /= set'Last then
+                  set (i) := set (i + 1);
+               end if;
+            else
+
+               if child = set (i) then
+                  set (i) := No_Sock_Addr;
+                  status  := Success;
+               end if;
             end if;
+
          end loop;
       end Remove_Child;
    end Children;
