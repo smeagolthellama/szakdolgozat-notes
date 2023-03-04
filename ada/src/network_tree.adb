@@ -5,6 +5,7 @@ with Interfaces; use Interfaces;
 with Memory_Stream;
 with Ada.Streams; use Ada.Streams;
 with Text_IO;
+with Ada.Text_IO;
 
 package body Network_Tree is
 
@@ -179,8 +180,8 @@ package body Network_Tree is
          Text_IO.Put_Line("Server thread error:" & Ada.Exceptions.Exception_Message(E));
    end Server;
 
-   procedure Client (addr: Inet_Addr_Type) is
+   procedure Client (addr: Inet_Addr_Type;port: Port_Type) is
    begin
-      null;
+      pragma Debug (Ada.Text_IO.Put_Line(Ada.Text_IO.Standard_Error,"Client("&Image(Value => addr)&","&port'Image&") called."));
    end Client;
 end Network_Tree;
