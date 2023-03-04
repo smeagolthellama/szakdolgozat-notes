@@ -7,16 +7,18 @@ with Text_IO;
 with Ada.Text_IO;
 
 package body Network_Tree is
-
    type Child_Number is range 0 .. 2;
    subtype Child_Index is Child_Number range 1 .. Child_Number'Last;
 
    type Child_Set is array (Child_Index) of Sock_Addr_Type;
 
+   type Child_Status is (Success, NotExist, Empty);
    protected Children is
+
       entry Add_Child (child : Sock_Addr_Type);
       entry Get_Children (n : out Child_Number; c : out Child_Set);
-      -- entry Remove_Child
+      entry Remove_Child (child : Sock_Addr_Type; status : out Child_Status);
+      pragma Unreferenced (Remove_Child);
    private
       number : Child_Number := 0;
       set    : Child_Set    := (others => No_Sock_Addr);
@@ -46,6 +48,23 @@ package body Network_Tree is
          c      := set;
          locked := False;
       end Get_Children;
+
+      entry Remove_Child (child : Sock_Addr_Type; status : out Child_Status)
+        when not locked is
+      begin
+         if number = 0 then
+            status := Empty;
+            return;
+         end if;
+         status := NotExist;
+         for child_iterator of set loop
+            if child = child_iterator then
+               child_iterator := No_Sock_Addr;
+               status         := Success;
+               exit;
+            end if;
+         end loop;
+      end Remove_Child;
    end Children;
 
    Message_Number : Unsigned_16 := 0;
