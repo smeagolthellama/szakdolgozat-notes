@@ -4,7 +4,8 @@ with Interfaces;   use Interfaces;
 with Memory_Stream;
 with Ada.Streams;  use Ada.Streams;
 with Text_IO;
-with Ada.Text_IO;
+with Ada.Containers.Synchronized_Queue_Interfaces;
+with Ada.Containers.Unbounded_Synchronized_Queues;
 
 package body Network_Tree is
    type Child_Number is range 0 .. 2;
@@ -226,13 +227,47 @@ package body Network_Tree is
            ("Server thread error:" & Ada.Exceptions.Exception_Message (E));
    end Server;
 
+   task Client_Thread is
+      entry New_Server_To_Try (addr : Inet_Addr_Type; port : Port_Type);
+   end Client_Thread;
+
    procedure Client (addr : Inet_Addr_Type; port : Port_Type) is
    begin
       pragma Debug
-        (Ada.Text_IO.Put_Line
-           (Ada.Text_IO.Standard_Error,
-            "Client(" & Image (Value => addr) & "," & port'Image &
-            ") called."));
-
+        (Text_IO.Put_Line
+           (File => Text_IO.Standard_Error,
+            Item =>
+              "Client(" & Image (Value => addr) & "," & port'Image &
+              ") called."));
+      Client_Thread.New_Server_To_Try (addr, port);
    end Client;
+
+   task body Client_Thread is
+      package Queue_interface is new Ada.Containers
+        .Synchronized_Queue_Interfaces
+        (Element_Type => Sock_Addr_Type);
+      package Address_Queues is new Ada.Containers
+        .Unbounded_Synchronized_Queues
+        (Queue_interface);
+      Queue : Address_Queues.Queue;
+   begin
+      loop
+         select
+            accept New_Server_To_Try (addr : Inet_Addr_Type; port : Port_Type)
+            do
+               if addr.Family = Family_Inet then
+                  Queue.Enqueue
+                    (Sock_Addr_Type'
+                       (Family => Family_Inet, Addr => addr, Port => port));
+               else
+                  Queue.Enqueue
+                    (Sock_Addr_Type'
+                       (Family => Family_Inet6, Addr => addr, Port => port));
+               end if;
+            end New_Server_To_Try;
+         or
+            terminate;
+         end select;
+      end loop;
+   end Client_Thread;
 end Network_Tree;
