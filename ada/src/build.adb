@@ -1,10 +1,14 @@
-with Ada.Text_IO; use Ada.Text_IO;
-with GNAT.Sockets;
-with Network_Tree;
 with Ada.Command_Line;
-with GNAT.Command_Line;
-with Ada.Strings.Fixed;
 with Ada.Exceptions;
+with Ada.Strings.Fixed;
+with Ada.Text_IO; use Ada.Text_IO;
+
+with GNAT.Command_Line;
+with GNAT.Sockets;
+
+with Network_Tree;
+
+
 
 procedure Build is
    -- These can be overwrittren by command line options.

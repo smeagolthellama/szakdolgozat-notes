@@ -1,11 +1,15 @@
-with Ada.Exceptions;
-with GNAT.Sockets; use GNAT.Sockets;
-with Interfaces;   use Interfaces;
-with Memory_Stream;
-with Ada.Streams;  use Ada.Streams;
-with Text_IO;
 with Ada.Containers.Synchronized_Queue_Interfaces;
 with Ada.Containers.Unbounded_Synchronized_Queues;
+with Ada.Exceptions;
+with Ada.Streams; use Ada.Streams;
+
+with GNAT.Sockets; use GNAT.Sockets;
+
+with Interfaces; use Interfaces;
+
+with Memory_Stream;
+
+with Text_IO;
 
 package body Network_Tree is
    type Child_Number is range 0 .. 2;
