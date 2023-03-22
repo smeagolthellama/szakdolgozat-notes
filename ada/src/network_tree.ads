@@ -12,5 +12,5 @@ package Network_Tree is
 
    task Server;
 
-   procedure Client (addr : Sock.Inet_Addr_Type; port : Sock.Port_Type);
+   procedure Connect_To_Server (addr : Sock.Inet_Addr_Type; port : Sock.Port_Type);
 end Network_Tree;

@@ -74,7 +74,7 @@ begin
                   then
                      -- note that Is_IPv4 accepts some addresses that Inet_Addr does not.
                      -- In these cases, Inet_Addr raises a Socket_Error
-                     my_tree.Client (GNAT.Sockets.Inet_Addr (Argument), Port);
+                     my_tree.Connect_To_Server (GNAT.Sockets.Inet_Addr (Argument), Port);
                   elsif Argument (1) = '[' then
                      declare
                         -- If there is not ']' in Argument, Close_Bracket will be 0
@@ -90,14 +90,14 @@ begin
                         then
                            if Close_Bracket = Argument'Last then
                               -- looks like it's an [ipv6] or [ipv4]. If not, Socket_Error.
-                              my_tree.Client
+                              my_tree.Connect_To_Server
                                 (GNAT.Sockets.Inet_Addr
                                    (Argument (2 .. Close_Bracket - 1)),
                                  Port);
                            elsif Argument (Close_Bracket + 1) = ':' then
                               -- We know it's [ipv*]:*.
                               -- We try to parse the port, and let Ada do it's thing.
-                              my_tree.Client
+                              my_tree.Connect_To_Server
                                 (GNAT.Sockets.Inet_Addr
                                    (Argument (2 .. Close_Bracket - 1)),
                                  GNAT.Sockets.Port_Type'Value
@@ -133,7 +133,7 @@ begin
                         if GNAT.Sockets.Is_IPv4_Address
                             (Argument (1 .. Colon - 1))
                         then
-                           my_tree.Client
+                           my_tree.Connect_To_Server
                              (GNAT.Sockets.Inet_Addr
                                 (Argument (1 .. Colon - 1)),
                               GNAT.Sockets.Port_Type'Value

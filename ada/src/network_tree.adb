@@ -171,7 +171,8 @@ package body Network_Tree is
                               String'Write (str, "err");
                               Memory_Stream.Free (buf);
                               Text_IO.Put_Line
-                                ("Error when trying to add child: " &
+                                (Text_IO.Standard_Error,
+                                 "Error when trying to add child: " &
                                  Ada.Exceptions.Exception_Message (E));
                         end;
                      when others =>
@@ -184,7 +185,8 @@ package body Network_Tree is
                   Memory_Stream.Read
                     (Memory_Stream.Memory_Buffer_Stream (str.all), outbound,
                      msgLen);
-                  Text_IO.Put_Line ("msgLen is " & msgLen'Image & ".");
+                  pragma Debug
+                    (Text_IO.Put_Line ("msgLen is " & msgLen'Image & "."));
                   if msgLen = 0 then
                      outbound (1) := 0;
                      msgLen       := 1;
@@ -199,7 +201,8 @@ package body Network_Tree is
    exception
       when E : others =>
          Text_IO.Put_Line
-           ("Mesenger thread error:" & Ada.Exceptions.Exception_Message (E));
+           (Text_IO.Standard_Error,
+            "Mesenger thread error:" & Ada.Exceptions.Exception_Message (E));
    end listen_Request;
 
    task body Server is
@@ -228,14 +231,15 @@ package body Network_Tree is
    exception
       when E : Socket_Error =>
          Text_IO.Put_Line
-           ("Server thread error:" & Ada.Exceptions.Exception_Message (E));
+           (Text_IO.Standard_Error,
+            "Server thread error:" & Ada.Exceptions.Exception_Message (E));
    end Server;
 
    task Client_Thread is
-      entry New_Server_To_Try (addr : Inet_Addr_Type; port : Port_Type);
+      entry Try_New_Server (addr : Inet_Addr_Type; port : Port_Type);
    end Client_Thread;
 
-   procedure Client (addr : Inet_Addr_Type; port : Port_Type) is
+   procedure Connect_To_Server (addr : Inet_Addr_Type; port : Port_Type) is
    begin
       pragma Debug
         (Text_IO.Put_Line
@@ -243,8 +247,8 @@ package body Network_Tree is
             Item =>
               "Client(" & Image (Value => addr) & "," & port'Image &
               ") called."));
-      Client_Thread.New_Server_To_Try (addr, port);
-   end Client;
+      Client_Thread.Try_New_Server (addr, port);
+   end Connect_To_Server;
 
    task body Client_Thread is
       package Queue_interface is new Ada.Containers
@@ -257,8 +261,7 @@ package body Network_Tree is
    begin
       loop
          select
-            accept New_Server_To_Try (addr : Inet_Addr_Type; port : Port_Type)
-            do
+            accept Try_New_Server (addr : Inet_Addr_Type; port : Port_Type) do
                if addr.Family = Family_Inet then
                   Queue.Enqueue
                     (Sock_Addr_Type'
@@ -268,7 +271,7 @@ package body Network_Tree is
                     (Sock_Addr_Type'
                        (Family => Family_Inet6, Addr => addr, Port => port));
                end if;
-            end New_Server_To_Try;
+            end Try_New_Server;
          or
             terminate;
          end select;
