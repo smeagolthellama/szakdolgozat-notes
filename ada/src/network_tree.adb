@@ -146,9 +146,9 @@ package body Network_Tree is
                         end;
                      when Character'Pos ('j') =>
                         declare
-                           number : Child_Number;
-                           cSet   : Child_Set;
-                           buf    : constant Memory_Stream.Stream_Access :=
+                           number        : Child_Number;
+                           cSet          : Child_Set;
+                           buf : constant Memory_Stream.Stream_Access :=
                              new Memory_Stream.Memory_Buffer_Stream
                                (maxMessageLength);
                            Child_Address : Sock_Addr_Type := talker;
@@ -258,6 +258,44 @@ package body Network_Tree is
         .Unbounded_Synchronized_Queues
         (Queue_interface);
       Queue : Address_Queues.Queue;
+
+      use Ada.Containers;
+
+      task Client_Running_connection is
+      end Client_Running_connection;
+
+      task body Client_Running_connection is
+         Query_String : constant Stream_Element_Array        :=
+           (1 => Character'Pos ('?'));
+         Join_String  : Stream_Element_Array (1 .. maxMessageLength);
+         buf          : constant Memory_Stream.Stream_Access :=
+           new Memory_Stream.Memory_Buffer_Stream (maxMessageLength);
+         Join_String_Length : Stream_Element_Offset;
+      begin
+         String'Write(buf, "j");
+         Port_Type'Write(buf,port);
+         Memory_Stream.Read(Memory_Stream.Memory_Buffer_Stream(buf.all),Join_String,Join_String_Length);
+         loop
+            while Queue.Current_Use < 1 loop
+               delay 1.0;
+            end loop;
+            while Queue.Current_Use >= 1 loop
+               declare
+                  Server_Address   : Sock_Addr_Type;
+                  Server_Socket    : Socket_Type;
+                  Transmitted_Data : Stream_Element_Offset;
+               begin
+                  Queue.Dequeue (Server_Address);
+                  Create_Socket
+                    (Server_Socket, Server_Address.Family, Socket_Datagram);
+                  Send_Socket
+                    (Server_Socket, Query_String, Transmitted_Data,
+                     Server_Address);
+               end;
+            end loop;
+         end loop;
+      end Client_Running_connection;
+
    begin
       loop
          select
