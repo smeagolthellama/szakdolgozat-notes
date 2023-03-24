@@ -11,7 +11,8 @@
             "target": "./obj/build",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText",
-            "preLaunchTask": "ada: Build current project"
+            "preLaunchTask": "ada: Build current project",
+            "arguments": "127.0.0.1 ::1"
         }
     ]
 }
