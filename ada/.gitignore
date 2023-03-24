@@ -4,3 +4,7 @@ alire/
 config/
 *.ali
 *.adt
+/obj/
+/bin/
+/alire/
+/config/
