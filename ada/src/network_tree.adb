@@ -2,6 +2,7 @@ with Ada.Containers.Synchronized_Queue_Interfaces;
 with Ada.Containers.Unbounded_Synchronized_Queues;
 with Ada.Exceptions;
 with Ada.Streams; use Ada.Streams;
+with Ada.Streams.Stream_IO;
 
 with GNAT.Sockets; use GNAT.Sockets;
 
@@ -263,16 +264,38 @@ package body Network_Tree is
       end Client_Running_connection;
 
       task body Client_Running_connection is
-         Query_String : constant Stream_Element_Array        :=
+         -- The string to send to ask for the number of connected children
+         Query_String       : constant Stream_Element_Array        :=
            (1 => Character'Pos ('?'));
-         Join_String  : Stream_Element_Array (1 .. maxMessageLength);
-         buf          : constant Memory_Stream.Stream_Access :=
+         -- The string to send to ask to join the server (needs to be constucted using the port number provided in the package instantiation)
+         Join_String        : Stream_Element_Array (1 .. maxMessageLength);
+         -- A memory_stream used to construct the previous variable (needs to be deallocated)
+         buf                : constant Memory_Stream.Stream_Access :=
            new Memory_Stream.Memory_Buffer_Stream (maxMessageLength);
          Join_String_Length : Stream_Element_Offset;
+
+         --------------------------------------------------------
+         -- Save a Stream_Element_Array to a debuging log file --
+         --------------------------------------------------------
+         procedure Debug_Stream_Element_Array (arr : in Stream_Element_Array)
+         is
+            F : Stream_IO.File_Type;
+            S : Stream_IO.Stream_Access;
+         begin
+            Stream_IO.Create (F, Stream_IO.Append_File, "/tmp/debug.log");
+            S := Stream_IO.Stream (F);
+            Stream_Element_Array'Write (S, arr);
+         end Debug_Stream_Element_Array;
       begin
-         String'Write(buf, "j");
-         Port_Type'Write(buf,port);
-         Memory_Stream.Read(Memory_Stream.Memory_Buffer_Stream(buf.all),Join_String,Join_String_Length);
+         -- prepare the join request string
+         String'Write (buf, "j");
+         Port_Type'Write (buf, port);
+         Memory_Stream.Read
+           (Memory_Stream.Memory_Buffer_Stream (buf.all), Join_String,
+            Join_String_Length);
+         Memory_Stream.Free (buf);
+         -- save the join request string to a debugging log file (currently does not work as intended)
+         pragma Debug (Debug_Stream_Element_Array (Join_String));
          loop
             declare
                Server_Address   : Sock_Addr_Type;
