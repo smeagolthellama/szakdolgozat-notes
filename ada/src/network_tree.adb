@@ -259,8 +259,6 @@ package body Network_Tree is
         (Queue_interface);
       Queue : Address_Queues.Queue;
 
-      use Ada.Containers;
-
       task Client_Running_connection is
       end Client_Running_connection;
 
@@ -276,23 +274,19 @@ package body Network_Tree is
          Port_Type'Write(buf,port);
          Memory_Stream.Read(Memory_Stream.Memory_Buffer_Stream(buf.all),Join_String,Join_String_Length);
          loop
-            while Queue.Current_Use < 1 loop
-               delay 1.0;
-            end loop;
-            while Queue.Current_Use >= 1 loop
-               declare
-                  Server_Address   : Sock_Addr_Type;
-                  Server_Socket    : Socket_Type;
-                  Transmitted_Data : Stream_Element_Offset;
-               begin
-                  Queue.Dequeue (Server_Address);
-                  Create_Socket
-                    (Server_Socket, Server_Address.Family, Socket_Datagram);
-                  Send_Socket
-                    (Server_Socket, Query_String, Transmitted_Data,
-                     Server_Address);
-               end;
-            end loop;
+            declare
+               Server_Address   : Sock_Addr_Type;
+               Server_Socket    : Socket_Type;
+               Transmitted_Data : Stream_Element_Offset;
+            begin
+               -- Dequeue blocks until there is data available
+               Queue.Dequeue (Server_Address);
+               Create_Socket
+                 (Server_Socket, Server_Address.Family, Socket_Datagram);
+               Send_Socket
+                 (Server_Socket, Query_String, Transmitted_Data,
+                  Server_Address);
+            end;
          end loop;
       end Client_Running_connection;
 
