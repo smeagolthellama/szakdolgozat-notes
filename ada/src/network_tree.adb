@@ -82,14 +82,14 @@ package body Network_Tree is
 
    Message_Number : Unsigned_16 := 0;
 
-   task listen_Request is
+   task Request_Handler is
       entry new_Request
         (sock          : Socket_Type; address : Sock_Addr_Type;
          message       : Stream_Element_Array;
          messageLength : Stream_Element_Offset);
-   end listen_Request;
+   end Request_Handler;
 
-   task body listen_Request is
+   task body Request_Handler is
       socket : Socket_Type;
       msg    : Stream_Element_Array (1 .. maxMessageLength);
       msgLen : Stream_Element_Offset;
@@ -111,9 +111,9 @@ package body Network_Tree is
             end new_Request;
             if msgLen >= 1 then
                declare
-                  flags : constant Unsigned_8 := Unsigned_8 (msg (1));
+                  message_type : constant Unsigned_8 := Unsigned_8 (msg (1));
                begin
-                  case flags is
+                  case message_type is
                      when Character'Pos ('?') =>
                         declare
                            number : Child_Number;
@@ -174,7 +174,7 @@ package body Network_Tree is
                               Text_IO.Put_Line
                                 (Text_IO.Standard_Error,
                                  "Error when trying to add child: " &
-                                 Ada.Exceptions.Exception_Message (E));
+                                   Ada.Exceptions.Exception_Message (E));
                         end;
                      when others =>
                         Message_Number := Message_Number + 1;
@@ -204,7 +204,7 @@ package body Network_Tree is
          Text_IO.Put_Line
            (Text_IO.Standard_Error,
             "Mesenger thread error:" & Ada.Exceptions.Exception_Message (E));
-   end listen_Request;
+   end Request_Handler;
 
    task body Server is
       listeningSocket  : Socket_Type;
@@ -224,7 +224,7 @@ package body Network_Tree is
          begin
             Receive_Socket
               (listeningSocket, message, messageLength, talkingAddress);
-            listen_Request.new_Request
+            Request_Handler.new_Request
               (sock    => listeningSocket, address => talkingAddress,
                message => message, messageLength => messageLength);
          end;
@@ -254,16 +254,16 @@ package body Network_Tree is
    task body Client_Thread is
       package Queue_interface is new Ada.Containers
         .Synchronized_Queue_Interfaces
-        (Element_Type => Sock_Addr_Type);
+          (Element_Type => Sock_Addr_Type);
       package Address_Queues is new Ada.Containers
         .Unbounded_Synchronized_Queues
-        (Queue_interface);
+          (Queue_interface);
       Queue : Address_Queues.Queue;
 
-      task Client_Running_connection is
-      end Client_Running_connection;
+      task Server_Selector is
+      end Server_Selector;
 
-      task body Client_Running_connection is
+      task body Server_Selector is
          -- The string to send to ask for the number of connected children
          Query_String       : constant Stream_Element_Array        :=
            (1 => Character'Pos ('?'));
@@ -272,7 +272,10 @@ package body Network_Tree is
          -- A memory_stream used to construct the previous variable (needs to be deallocated)
          buf                : constant Memory_Stream.Stream_Access :=
            new Memory_Stream.Memory_Buffer_Stream (maxMessageLength);
+         -- The length of the join request. Gets set when the join request is sent.
          Join_String_Length : Stream_Element_Offset;
+         -- A Selector for listening to multiple sockets at once.
+         selector : Selector_Type;
 
          --------------------------------------------------------
          -- Save a Stream_Element_Array to a debuging log file --
@@ -311,7 +314,7 @@ package body Network_Tree is
                   Server_Address);
             end;
          end loop;
-      end Client_Running_connection;
+      end Server_Selector;
 
    begin
       loop
