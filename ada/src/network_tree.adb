@@ -34,6 +34,10 @@ package body Network_Tree is
    protected body Children is
       entry Add_Child (child : Sock_Addr_Type) when not locked is
       begin
+         pragma Debug
+           (Text_IO.Put_Line
+              (Text_IO.Standard_Error,
+                "Add_Child(" & Image (child) & ") called."));
          locked       := True;
          number       := number + 1;
          set (number) := child;
@@ -51,13 +55,19 @@ package body Network_Tree is
          if number < 1 then
             set (1) := No_Sock_Addr;
          end if;
-         c      := set;
+         c := set;
+         pragma Debug
+           (Text_IO.Put_Line
+              (Text_IO.Standard_Error,
+               "Get_Children(" & n'Image & " (out), [" & Image (c (1)) & ", " &
+               Image (c (2)) & "] (out)) called."));
          locked := False;
       end Get_Children;
 
       entry Remove_Child (child : Sock_Addr_Type; status : out Child_Status)
         when not locked is
       begin
+         locked := True;
          if number = 0 then
             status := Empty;
             return;
@@ -77,6 +87,12 @@ package body Network_Tree is
             end if;
 
          end loop;
+         pragma Debug
+           (Text_IO.Put_Line
+              (Text_IO.Standard_Error,
+               "Remove_Child(" & Image (child) & ", " & status'Image &
+               ") called"));
+         locked := False;
       end Remove_Child;
    end Children;
 
@@ -97,6 +113,9 @@ package body Network_Tree is
       str    : constant Memory_Stream.Stream_Access :=
         new Memory_Stream.Memory_Buffer_Stream (maxMessageLength);
    begin
+      pragma Debug
+        (Text_IO.Put_Line
+           (Text_IO.Standard_Error, "Request_Handler starting..."));
       loop
          select
             accept new_Request
@@ -104,6 +123,12 @@ package body Network_Tree is
                message       : Stream_Element_Array;
                messageLength : Stream_Element_Offset)
             do
+               pragma Debug
+                 (Text_IO.Put_Line
+                    (Text_IO.Standard_Error,
+                     "Request_Handler.new_Request(" & Image (sock) & "," &
+                     Image (address) & ", <Stream_Element_Array> ," &
+                     messageLength'Image & ") called."));
                socket := sock;
                msg    := message;
                msgLen := messageLength;
@@ -113,8 +138,17 @@ package body Network_Tree is
                declare
                   message_type : constant Unsigned_8 := Unsigned_8 (msg (1));
                begin
+                  pragma Debug
+                    (Text_IO.Put_Line
+                       (Text_IO.Standard_Error,
+                        "message_type is " & message_type'Image & " ('" &
+                        Character'Val (message_type) & "')"));
                   case message_type is
                      when Character'Pos ('?') =>
+                        pragma Debug
+                          (Text_IO.Put_Line
+                             (Text_IO.Standard_Error,
+                              "message identified as query."));
                         declare
                            number : Child_Number;
                            cSet   : Child_Set;
@@ -146,6 +180,10 @@ package body Network_Tree is
                            end case;
                         end;
                      when Character'Pos ('j') =>
+                        pragma Debug
+                          (Text_IO.Put_Line
+                             (Text_IO.Standard_Error,
+                              "message identified as a join request."));
                         declare
                            number        : Child_Number;
                            cSet          : Child_Set;
@@ -160,8 +198,16 @@ package body Network_Tree is
                               msg (msg'First + 1 .. msg'Last));
                            Port_Type'Read (buf, Child_Address.Port);
                            if number = 2 then
+                              pragma Debug
+                                (Text_IO.Put_Line
+                                   (Text_IO.Standard_Error,
+                                    "Join request denied"));
                               String'Write (str, "err");
                            else
+                              pragma Debug
+                                (Text_IO.Put_Line
+                                   (Text_IO.Standard_Error,
+                                    "Join request accepted"));
                               Children.Add_Child (child => Child_Address);
                               String'Write (str, "ok");
                               Unsigned_16'Write (str, Message_Number);
@@ -174,20 +220,30 @@ package body Network_Tree is
                               Text_IO.Put_Line
                                 (Text_IO.Standard_Error,
                                  "Error when trying to add child: " &
-                                   Ada.Exceptions.Exception_Message (E));
+                                 Ada.Exceptions.Exception_Message (E));
                         end;
                      when others =>
+                        pragma Debug
+                          (Text_IO.Put_Line
+                             (Text_IO.Standard_Error,
+                              "message is a genaric message to be passed on."));
                         Message_Number := Message_Number + 1;
                   end case;
                end;
                declare
                   outbound : Stream_Element_Array (1 .. maxMessageLength);
                begin
+                  pragma Debug
+                    (Text_IO.Put_Line
+                       (Text_IO.Standard_Error,
+                        "Sending reply to sender of message."));
                   Memory_Stream.Read
                     (Memory_Stream.Memory_Buffer_Stream (str.all), outbound,
                      msgLen);
                   pragma Debug
-                    (Text_IO.Put_Line ("msgLen is " & msgLen'Image & "."));
+                    (Text_IO.Put_Line
+                       (Text_IO.Standard_Error,
+                        "msgLen is " & msgLen'Image & "."));
                   if msgLen = 0 then
                      outbound (1) := 0;
                      msgLen       := 1;
@@ -210,12 +266,24 @@ package body Network_Tree is
       listeningSocket  : Socket_Type;
       listeningAddress : Sock_Addr_Type (family);
    begin
+      pragma Debug
+        (Text_IO.Put_Line
+           (Text_IO.Standard_Error, "Server thread starting..."));
       Create_Socket
         (listeningSocket, family, Socket_Datagram, IP_Protocol_For_UDP_Level);
+      pragma Debug
+        (Text_IO.Put_Line
+           (Text_IO.Standard_Error,
+            "Socket created, with family=" & family'Image & "."));
       listeningAddress.Addr :=
         (if family = Family_Inet then Any_Inet_Addr else Any_Inet6_Addr);
       listeningAddress.Port := port;
       Bind_Socket (listeningSocket, listeningAddress);
+      pragma Debug
+        (Text_IO.Put_Line
+           (Text_IO.Standard_Error,
+            "Socket bound to address " & Image (listeningAddress) &
+            ". Starting listening loop."));
       loop
          declare
             talkingAddress : Sock_Addr_Type;
@@ -224,6 +292,9 @@ package body Network_Tree is
          begin
             Receive_Socket
               (listeningSocket, message, messageLength, talkingAddress);
+            pragma Debug
+              (Text_IO.Put_Line
+                 (Text_IO.Standard_Error, "listening loop got something."));
             Request_Handler.new_Request
               (sock    => listeningSocket, address => talkingAddress,
                message => message, messageLength => messageLength);
@@ -246,7 +317,7 @@ package body Network_Tree is
         (Text_IO.Put_Line
            (File => Text_IO.Standard_Error,
             Item =>
-              "Client(" & Image (Value => addr) & "," & port'Image &
+              "Connect_To_Server(" & Image (Value => addr) & "," & port'Image &
               ") called."));
       Client_Thread.Try_New_Server (addr, port);
    end Connect_To_Server;
@@ -254,13 +325,15 @@ package body Network_Tree is
    task body Client_Thread is
       package Queue_interface is new Ada.Containers
         .Synchronized_Queue_Interfaces
-          (Element_Type => Sock_Addr_Type);
+        (Element_Type => Sock_Addr_Type);
       package Address_Queues is new Ada.Containers
         .Unbounded_Synchronized_Queues
-          (Queue_interface);
+        (Queue_interface);
       Queue : Address_Queues.Queue;
 
       task Server_Selector is
+         entry Reconnect;
+         pragma Unreferenced (Reconnect);
       end Server_Selector;
 
       task body Server_Selector is
@@ -275,7 +348,14 @@ package body Network_Tree is
          -- The length of the join request. Gets set when the join request is sent.
          Join_String_Length : Stream_Element_Offset;
          -- A Selector for listening to multiple sockets at once.
-         selector : Selector_Type;
+         Selector           : Selector_Type;
+
+         Max_Retries : constant Integer := 5;
+         type Connection_Retry_Count is range 1 .. Max_Retries;
+
+         -- The number of times I have tried to connect to each of the sockets in each set.
+         Connections_By_Retry_Count :
+           array (Connection_Retry_Count) of Socket_Set_Type;
 
          --------------------------------------------------------
          -- Save a Stream_Element_Array to a debuging log file --
@@ -285,11 +365,20 @@ package body Network_Tree is
             F : Stream_IO.File_Type;
             S : Stream_IO.Stream_Access;
          begin
+            pragma Debug
+              (Text_IO.Put_Line
+                 (Text_IO.Standard_Error,
+                  "Debug_Stream_Element_Array( <Stream_Element_Array> ) called."));
             Stream_IO.Create (F, Stream_IO.Append_File, "/tmp/debug.log");
             S := Stream_IO.Stream (F);
             Stream_Element_Array'Write (S, arr);
          end Debug_Stream_Element_Array;
+
+         use Ada.Containers;
       begin
+         pragma Debug
+           (Text_IO.Put_Line
+              (Text_IO.Standard_Error, "Server_Selector thread starting..."));
          -- prepare the join request string
          String'Write (buf, "j");
          Port_Type'Write (buf, port);
@@ -299,21 +388,210 @@ package body Network_Tree is
          Memory_Stream.Free (buf);
          -- save the join request string to a debugging log file (currently does not work as intended)
          pragma Debug (Debug_Stream_Element_Array (Join_String));
-         loop
-            declare
-               Server_Address   : Sock_Addr_Type;
-               Server_Socket    : Socket_Type;
-               Transmitted_Data : Stream_Element_Offset;
-            begin
-               -- Dequeue blocks until there is data available
-               Queue.Dequeue (Server_Address);
-               Create_Socket
-                 (Server_Socket, Server_Address.Family, Socket_Datagram);
-               Send_Socket
-                 (Server_Socket, Query_String, Transmitted_Data,
-                  Server_Address);
-            end;
+
+         Create_Selector (Selector);
+
+         for I in Connections_By_Retry_Count'Range loop
+            Sock.Empty (Connections_By_Retry_Count (I));
          end loop;
+
+         pragma Debug
+           (Text_IO.Put_Line
+              (Text_IO.Standard_Error, "Starting server connection loop..."));
+         loop
+            Reconnect_Loop :
+            loop
+               pragma Debug
+                 (Text_IO.Put_Line
+                    (Text_IO.Standard_Error,
+                     "Server connection loop checking for new servers on the queue..."));
+               while Queue.Current_Use > 0 loop
+                  -- Add the new address to the set
+                  declare
+                     Server_Address   : Sock_Addr_Type;
+                     Server_Socket    : Socket_Type;
+                     Transmitted_Data : Stream_Element_Offset;
+                  begin
+                     -- Dequeue blocks until there is data available
+                     Queue.Dequeue (Server_Address);
+                     Create_Socket
+                       (Server_Socket, Server_Address.Family, Socket_Datagram);
+                     Send_Socket
+                       (Server_Socket, Query_String, Transmitted_Data,
+                        Server_Address);
+                     Set (Connections_By_Retry_Count (1), Server_Socket);
+                  end;
+               end loop;
+               pragma Debug
+                 (Text_IO.Put_Line
+                    (Text_IO.Standard_Error,
+                     "preparing selector to see if there are any answers from the servers"));
+               declare
+                  R_Set          : Socket_Set_Type;
+                  W_Set_Dummy    : Socket_Set_Type;
+                  Tmp_Copy       : Socket_Set_Type;
+                  Socket_To_Read : Socket_Type;
+                  Status         : Selector_Status;
+               begin
+                  Empty (W_Set_Dummy);
+                  -- copy all sockets over to the read set, to be selected between.
+                  for I in Connections_By_Retry_Count'Range loop
+                     Copy (Connections_By_Retry_Count (I), Tmp_Copy);
+                     loop
+                        Get (Tmp_Copy, Socket_To_Read);
+                        exit when Socket_To_Read = No_Socket;
+                        Set (R_Set, Socket_To_Read);
+                     end loop;
+                  end loop;
+                  -- check the selector: is there any incoming data?
+                  Check_Selector (Selector, R_Set, W_Set_Dummy, Status, 0.3);
+                  for I in Connections_By_Retry_Count'Range loop
+                     Copy (Connections_By_Retry_Count (I), Tmp_Copy);
+                     loop
+                        Get (Tmp_Copy, Socket_To_Read);
+                        exit when Socket_To_Read = No_Socket;
+                        if not Is_Set (R_Set, Socket_To_Read) then
+                           Clear
+                             (Connections_By_Retry_Count (I), Socket_To_Read);
+                           if I /= Connections_By_Retry_Count'Last then
+                              Set (R_Set, Socket_To_Read);
+                           else
+                              pragma Debug
+                                (Text_IO.Put_Line
+                                   (Text_IO.Standard_Error,
+                                    "Connection timed out on socket " &
+                                    Image (Socket_To_Read)));
+                           end if;
+                        end if;
+                     end loop;
+                  end loop;
+                  pragma Debug
+                    (Text_IO.Put_Line
+                       (Text_IO.Standard_Error,
+                        "Selector returned status " & Status'Image));
+                  case Status is
+                     when Aborted =>
+                        exit;
+                     when Expired =>
+                        null;
+                     when Completed =>
+                        -- parse the response(s).
+                        while not Is_Empty (R_Set) loop
+                           Get (R_Set, Socket_To_Read);
+                           declare
+                              Addr           : Sock_Addr_Type;
+                              message        :
+                                Stream_Element_Array (1 .. maxMessageLength);
+                              message_length : Stream_Element_Offset;
+                           begin
+                              Receive_Socket
+                                (Socket_To_Read, message, message_length, Addr,
+                                 Wait_For_A_Full_Reception);
+                              pragma Debug
+                                (Text_IO.Put
+                                   (Text_IO.Standard_Error,
+                                    "Connected to server at " & Image (Addr) &
+                                    "?"));
+                              exit Reconnect_Loop when message_length >= 2 and
+                                message (1) = Character'Pos ('o') and
+                                message (2) = Character'Pos ('k');
+                              pragma Debug
+                                (Text_IO.Put_Line
+                                   (Text_IO.Standard_Error, "No."));
+                              if
+                                (message_length >= 3 and
+                                 message (1) = Character'Pos ('e') and
+                                 message (2) = Character'Pos ('r') and
+                                 message (3) = Character'Pos ('r'))
+                              then
+                                 pragma Debug
+                                   (Text_IO.Put_Line
+                                      (Text_IO.Standard_Error,
+                                       "Our join request was denied."));
+                                 for I in Connections_By_Retry_Count'Range loop
+                                    if Is_Set
+                                        (Connections_By_Retry_Count (I),
+                                         Socket_To_Read)
+                                    then
+                                       Clear
+                                         (Connections_By_Retry_Count (I),
+                                          Socket_To_Read);
+                                       Shutdown_Socket (Socket_To_Read);
+                                       exit;
+                                    end if;
+                                 end loop;
+                              else
+                                 declare
+                                    flags            : Unsigned_16;
+                                    number           : Unsigned_16;
+                                    Servers_Children : Child_Set;
+                                    buf              :
+                                      constant Memory_Stream.Stream_Access :=
+                                      new Memory_Stream.Memory_Buffer_Stream
+                                        (maxMessageLength);
+                                    Transmitted_Data : Stream_Element_Offset;
+                                 begin
+                                    Memory_Stream.Write
+                                      (Memory_Stream.Memory_Buffer_Stream
+                                         (buf.all),
+                                       message);
+                                    Unsigned_16'Read (buf, flags);
+                                    Unsigned_16'Read (buf, number);
+                                    Child_Set'Read (buf, Servers_Children);
+                                    case number is
+                                       when 0 | 1 =>
+                                          Send_Socket
+                                            (Socket_To_Read,
+                                             Join_String
+                                               (1 .. Join_String_Length),
+                                             Transmitted_Data, Addr);
+                                       when 2 =>
+                                          Connect_To_Server
+                                            (Servers_Children (1).Addr,
+                                             Servers_Children (1).Port);
+                                          Connect_To_Server
+                                            (Servers_Children (2).Addr,
+                                             Servers_Children (2).Port);
+                                          for I in Connections_By_Retry_Count'
+                                            Range
+                                          loop
+                                             if Is_Set
+                                                 (Connections_By_Retry_Count
+                                                    (I),
+                                                  Socket_To_Read)
+                                             then
+                                                Clear
+                                                  (Connections_By_Retry_Count
+                                                     (I),
+                                                   Socket_To_Read);
+                                                Close_Socket (Socket_To_Read);
+                                                exit;
+                                             end if;
+                                          end loop;
+                                       when others =>
+                                          -- server allegedly has more than two kids, and we can't trust out parsing. We'll just ignore it.
+                                          null;
+                                    end case;
+                                 end;
+                              end if;
+                           end;
+                        end loop;
+                  end case;
+               end;
+            end loop Reconnect_Loop;
+            pragma Debug (Text_IO.Put_Line (Text_IO.Standard_Error, "Yes."));
+            select
+               accept Reconnect;
+            or
+               terminate;
+            end select;
+         end loop;
+      exception
+         when E : Socket_Error =>
+            Text_IO.Put_Line
+              (Text_IO.Standard_Error,
+               "Server connection thread error:" &
+               Ada.Exceptions.Exception_Message (E));
       end Server_Selector;
 
    begin
@@ -334,5 +612,10 @@ package body Network_Tree is
             terminate;
          end select;
       end loop;
+   exception
+      when E : Socket_Error =>
+         Text_IO.Put_Line
+           (Text_IO.Standard_Error,
+            "Client thread error:" & Ada.Exceptions.Exception_Message (E));
    end Client_Thread;
 end Network_Tree;
