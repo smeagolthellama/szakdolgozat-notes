@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "gdb",
+            "request": "launch",
+            "name": "debug with different port",
+            "target": "./obj/build",
+            "cwd": "${workspaceRoot}",
+            "valuesFormatting": "parseText",
+            "preLaunchTask": "ada: Build current project",
+            "arguments": "-p 12345 127.0.0.1:10573 [::1]:10573"
+        },
+        {
             "name": "Debug",
             "type": "gdb",
             "request": "launch",
@@ -13,6 +23,16 @@
             "valuesFormatting": "parseText",
             "preLaunchTask": "ada: Build current project",
             "arguments": "127.0.0.1 ::1"
+        },
+        {
+            "name": "Debug on IPv6",
+            "type": "gdb",
+            "request": "launch",
+            "target": "./obj/build",
+            "cwd": "${workspaceRoot}",
+            "valuesFormatting": "parseText",
+            "preLaunchTask": "ada: Build current project",
+            "arguments": "-6 ::1"
         }
     ]
 }
