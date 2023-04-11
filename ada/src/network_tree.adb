@@ -2,7 +2,6 @@ with Ada.Containers.Synchronized_Queue_Interfaces;
 with Ada.Containers.Unbounded_Synchronized_Queues;
 with Ada.Exceptions;
 with Ada.Streams; use Ada.Streams;
-with Ada.Streams.Stream_IO;
 
 with GNAT.Sockets; use GNAT.Sockets;
 
@@ -138,7 +137,7 @@ package body Network_Tree is
                  (Text_IO.Put_Line
                     (Text_IO.Standard_Error,
                      "Request_Handler.new_Request(" & Image (Sock) & "," &
-                       Image (Address) & ", <Stream_Element_Array> ," &
+                       Image (Address) & ", '" & Image (Message (Message'First .. Message'First + MessageLength)) & "' ," &
                        MessageLength'Image & ") called."));
                Socket := Sock;
                Msg    := Message;
@@ -196,33 +195,44 @@ package body Network_Tree is
                              (Text_IO.Standard_Error,
                               "message identified as a join request."));
                         declare
-                           Number        : Child_Number;
-                           CSet          : Child_Set;
-                           Buf           : constant Memory_Stream.Stream_Access :=
-                                             new Memory_Stream.Memory_Buffer_Stream
-                                               (MaxMessageLength);
-                           Child_Address : Sock_Addr_Type := Talker;
+                           Number               : Child_Number;
+                           CSet                 : Child_Set;
+                           Buf                  : constant Memory_Stream.Stream_Access :=
+                                                    new Memory_Stream.Memory_Buffer_Stream
+                                                      (MaxMessageLength);
+                           Child_Address_Family : Family_Inet_4_6;
+                           Child_Family_Number  : Unsigned_8;
                         begin
                            Children.Get_Children (Number, CSet);
                            Memory_Stream.Write
                              (Memory_Stream.Memory_Buffer_Stream (Buf.all),
-                              Msg (Msg'First + 1 .. Msg'Last));
-                           Port_Type'Read (Buf, Child_Address.Port);
-                           if Number = 2 then
-                              pragma Debug
-                                (Text_IO.Put_Line
-                                   (Text_IO.Standard_Error,
-                                    "Join request denied"));
-                              String'Write (Str, "err");
+                              Msg (Msg'First + 1 .. Msg'First + MsgLen));
+                           Unsigned_8'Read (Buf, Child_Family_Number);
+                           if Child_Family_Number = 4 then
+                              Child_Address_Family := Family_Inet;
                            else
-                              pragma Debug
-                                (Text_IO.Put_Line
-                                   (Text_IO.Standard_Error,
-                                    "Join request accepted"));
-                              Children.Add_Child (Child => Child_Address);
-                              String'Write (Str, "ok");
-                              Unsigned_16'Write (Str, Local_Message_Number);
+                              Child_Address_Family := Family_Inet6;
                            end if;
+                           declare
+                              Child_Address : Sock_Addr_Type (Child_Address_Family);
+                           begin
+                              Port_Type'Read (Buf, Child_Address.Port);
+                              if Number = 2 then
+                                 pragma Debug
+                                   (Text_IO.Put_Line
+                                      (Text_IO.Standard_Error,
+                                       "Join request denied"));
+                                 String'Write (Str, "err");
+                              else
+                                 pragma Debug
+                                   (Text_IO.Put_Line
+                                      (Text_IO.Standard_Error,
+                                       "Join request accepted"));
+                                 Children.Add_Child (Child => Child_Address);
+                                 String'Write (Str, "ok");
+                                 Unsigned_16'Write (Str, Local_Message_Number);
+                              end if;
+                           end;
                            Memory_Stream.Free (Buf);
                         exception
                            when E : Constraint_Error =>
@@ -257,7 +267,7 @@ package body Network_Tree is
                            Memory_Stream.Write
                              (Memory_Stream.Memory_Buffer_Stream
                                 (Receive_Buf.all),
-                              Msg (Msg'First + 1 .. Msg'Last));
+                              Msg (Msg'First + 1 .. Msg'First + MsgLen));
                            Unsigned_16'Read
                              (Receive_Buf, Message_Message_Number);
                            if Message_Message_Number /= Local_Message_Number
@@ -278,21 +288,37 @@ package body Network_Tree is
                              (Send_Buf,
                               Local_Message_Number); --Might need rewriting for message order handling
                            Stream_Element_Array'Write
-                             (Send_Buf, Msg (Msg'First + 1 + 2 .. Msg'Last));
-                           pragma Debug ( Text_IO.Put (Text_IO.Standard_Error, "Message received (without metainfo) is "));
-                           Text_IO.Put (Image (Msg (Msg'First + 1 + 2 .. Msg'Last)));
+                             (Send_Buf, Msg (Msg'First + 1 + 2 .. Msg'First + MsgLen));
+                           pragma Debug
+                             (Text_IO.Put
+                                (Text_IO.Standard_Error,
+                                 "Message received (without metainfo) is "));
+                           Text_IO.Put
+                             (Image (Msg (Msg'First + 1 + 2 .. Msg'First + MsgLen)));
                            Memory_Stream.Read
-                             (Memory_Stream.Memory_Buffer_Stream (Send_Buf.all),
+                             (Memory_Stream.Memory_Buffer_Stream
+                                (Send_Buf.all),
                               Outbound_Message, Outbound_Message_Length);
-                           Children.Get_Children (Destination_Count, Destinations);
+                           Children.Get_Children
+                             (Destination_Count, Destinations);
                            if Destination_Count > 0 then
-                              for Destination of Destinations(1..Destination_Count) loop
-                                 Send_Socket
-                                   (Socket,
-                                    Outbound_Message
-                                      (Outbound_Message'First ..
-                                           Outbound_Message_Length),
-                                    Outbound_Message_Length, Destination);
+                              for Destination of Destinations
+                                (1 .. Destination_Count)
+                              loop
+                                 declare
+                                    Socket : Socket_Type;
+                                 begin
+                                    Create_Socket
+                                      (Socket => Socket,
+                                       Family => Destination.Family,
+                                       Mode   => Socket_Datagram);
+                                    Send_Socket
+                                      (Socket,
+                                       Outbound_Message
+                                         (Outbound_Message'First ..
+                                              Outbound_Message_Length),
+                                       Outbound_Message_Length, Destination);
+                                 end;
                               end loop;
                            end if;
                         end;
@@ -431,23 +457,6 @@ package body Network_Tree is
          Connections_By_Retry_Count :
            array (Connection_Retry_Count) of Socket_Set_Type;
 
-         --------------------------------------------------------
-         -- Save a Stream_Element_Array to a debuging log file --
-         --------------------------------------------------------
-         procedure Debug_Stream_Element_Array (Arr : in Stream_Element_Array)
-         is
-            F : Stream_IO.File_Type;
-            S : Stream_IO.Stream_Access;
-         begin
-            pragma Debug
-              (Text_IO.Put_Line
-                 (Text_IO.Standard_Error,
-                  "Debug_Stream_Element_Array( <Stream_Element_Array> ) called."));
-            Stream_IO.Create (F, Stream_IO.Append_File, "/tmp/debug.log");
-            S := Stream_IO.Stream (F);
-            Stream_Element_Array'Write (S, Arr);
-         end Debug_Stream_Element_Array;
-
          use Ada.Containers;
       begin
          pragma Debug
@@ -455,13 +464,17 @@ package body Network_Tree is
               (Text_IO.Standard_Error, "Server_Selector thread starting..."));
          -- prepare the join request string
          String'Write (Buf, "j");
+         Unsigned_8'Write (Buf, (if Family = Family_Inet then 4 else 6));
          Port_Type'Write (Buf, Port);
          Memory_Stream.Read
            (Memory_Stream.Memory_Buffer_Stream (Buf.all), Join_String,
             Join_String_Length);
          Memory_Stream.Free (Buf);
          -- save the join request string to a debugging log file (currently does not work as intended)
-         pragma Debug (Debug_Stream_Element_Array (Join_String));
+         pragma Debug
+           (Text_IO.Put_Line
+              ("Join request string is " & '"' & Image (Join_String) & '"' &
+                 "."));
 
          Create_Selector (Selector);
 
