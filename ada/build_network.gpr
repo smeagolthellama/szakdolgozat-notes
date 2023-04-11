@@ -10,7 +10,7 @@ project Build_Network is
    end Ide;
 
    package Compiler is
-      for Switches ("ada") use ("-gnato", "-fstack-check", "-gnatE", "-g", "-gnata", "-gnatf", "-gnat12", "-gnatVa", "-gnatwa", "-gnatyibdfklno");
+      for Switches ("ada") use ("-gnato", "-fstack-check", "-gnatE", "-g", "-gnata", "-gnatf", "-gnat12", "-gnatVa", "-gnatwa", "-gnatyibdfkln");
    end Compiler;
 
    package Binder is
