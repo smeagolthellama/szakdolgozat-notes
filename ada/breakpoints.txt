@@ -1,4 +1,3 @@
-break network_tree.adb:399
-break network_tree.adb:524
-break network_tree.adb:583
 break build
+r
+catch exception
