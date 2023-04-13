@@ -645,6 +645,29 @@ package body Network_Tree is
                                     Unsigned_16'Read (Buf, Flags);
                                     Unsigned_16'Read (Buf, Number);
                                     Child_Set'Read (Buf, Servers_Children);
+                                    for I in Servers_Children'Range loop
+                                       if Servers_Children (I).Family =
+                                         Family_Inet and
+                                         Servers_Children (I).Addr =
+                                           Any_Inet_Addr
+                                       then
+                                          if Addr.Family = Family_Inet then
+                                             Servers_Children (I).Addr :=
+                                               Addr.Addr;
+                                          end if;
+                                       end if;
+                                       if Servers_Children (I).Family =
+                                         Family_Inet6 and
+                                         Servers_Children (I).Addr =
+                                           Any_Inet6_Addr
+                                       then
+                                          if Addr.Family = Family_Inet6 then
+                                             Servers_Children (I).Addr :=
+                                               Addr.Addr;
+                                          end if;
+                                       end if;
+                                    end loop;
+
                                     case Number is
                                        when 0 | 1 =>
                                           Send_Socket
