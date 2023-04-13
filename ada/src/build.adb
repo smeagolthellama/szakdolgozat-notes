@@ -1,3 +1,5 @@
+with Ada.Characters;
+with Ada.Characters.Latin_1;
 with Ada.Command_Line;
 with Ada.Exceptions;
 with Ada.Strings.Fixed;
@@ -36,7 +38,7 @@ begin
          when '6' =>
             Family := GNAT.Sockets.Family_Inet6;
          when 'f' =>
-
+            null; --TODO
          when '-' =>
             if GNAT.Command_Line.Full_Switch = "--help" then
                Print_Help := True;
@@ -51,12 +53,12 @@ begin
    end loop;
 
    if Print_Help then
-      Text_IO.Put_Line ("Usage: ");
-      Text_IO.Put_Line (Ada.Characters.Latin_1.HT & Ada.Command_Line.Command_Name & " [-h6] [-p <number>] [--port=number] [--help]");
-      Text_IO.Put_Line ("");
-      Text_IO.Put_Line ("-h/--help" & Ada.Characters.Latin_1.HT & ": Print this message and exit");
-      Text_IO.Put_Line ("-6" & Ada.Characters.Latin_1.HT & ": Listen on IPv6");
-      Text_IO.Put_Line ("-p/--port" & Ada.Characters.Latin_1.HT & ": Listen on this port");
+      Ada.Text_IO.Put_Line ("Usage: ");
+      Ada.Text_IO.Put_Line (Ada.Characters.Latin_1.HT & Ada.Command_Line.Command_Name & " [-h6] [-p <number>] [--port=number] [--help]");
+      Ada.Text_IO.Put_Line ("");
+      Ada.Text_IO.Put_Line ("-h/--help" & Ada.Characters.Latin_1.HT & ": Print this message and exit");
+      Ada.Text_IO.Put_Line ("-6" & Ada.Characters.Latin_1.HT & ": Listen on IPv6");
+      Ada.Text_IO.Put_Line ("-p/--port" & Ada.Characters.Latin_1.HT & ": Listen on this port");
    else
       -- Parse servers to try listening to, in the form of ip addresses with ports.
       -- accepted formats:

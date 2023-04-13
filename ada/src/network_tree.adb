@@ -36,7 +36,7 @@ package body Network_Tree is
          pragma Debug
            (Text_IO.Put_Line
               (Text_IO.Standard_Error,
-               "Add_Child(" & Image (Child) & ") called."));
+                "Add_Child(" & Image (Child) & ") called."));
          Locked       := True;
          Number       := Number + 1;
          Set (Number) := Child;
@@ -59,7 +59,7 @@ package body Network_Tree is
            (Text_IO.Put_Line
               (Text_IO.Standard_Error,
                "Get_Children(" & N'Image & " (out), [" & Image (C (1)) & ", " &
-                 Image (C (2)) & "] (out)) called."));
+               Image (C (2)) & "] (out)) called."));
          Locked := False;
       end Get_Children;
 
@@ -90,7 +90,7 @@ package body Network_Tree is
            (Text_IO.Put_Line
               (Text_IO.Standard_Error,
                "Remove_Child(" & Image (Child) & ", " & Status'Image &
-                 ") called"));
+               ") called"));
          Locked := False;
       end Remove_Child;
    end Children;
@@ -117,11 +117,11 @@ package body Network_Tree is
 
    task body Request_Handler is
       Socket : Socket_Type;
-      Msg    : Stream_Element_Array (1 .. MaxMessageLength);
+      Msg    : Stream_Element_Array (1 .. Max_Message_Length);
       MsgLen : Stream_Element_Offset;
       Talker : Sock_Addr_Type;
       Str    : constant Memory_Stream.Stream_Access :=
-                 new Memory_Stream.Memory_Buffer_Stream (MaxMessageLength);
+        new Memory_Stream.Memory_Buffer_Stream (Max_Message_Length);
    begin
       pragma Debug
         (Text_IO.Put_Line
@@ -137,8 +137,11 @@ package body Network_Tree is
                  (Text_IO.Put_Line
                     (Text_IO.Standard_Error,
                      "Request_Handler.new_Request(" & Image (Sock) & "," &
-                       Image (Address) & ", '" & Image (Message (Message'First .. Message'First + MessageLength)) & "' ," &
-                       MessageLength'Image & ") called."));
+                     Image (Address) & ", '" &
+                     Image
+                       (Message
+                          (Message'First .. Message'First + MessageLength)) &
+                     "' ," & MessageLength'Image & ") called."));
                Socket := Sock;
                Msg    := Message;
                MsgLen := MessageLength;
@@ -152,7 +155,7 @@ package body Network_Tree is
                     (Text_IO.Put_Line
                        (Text_IO.Standard_Error,
                         "message_type is " & Message_Type'Image & " ('" &
-                          Character'Val (Message_Type) & "')"));
+                        Character'Val (Message_Type) & "')"));
                   case Message_Type is
                      when Character'Pos ('?') =>
                         pragma Debug
@@ -195,11 +198,11 @@ package body Network_Tree is
                              (Text_IO.Standard_Error,
                               "message identified as a join request."));
                         declare
-                           Number               : Child_Number;
-                           CSet                 : Child_Set;
-                           Buf                  : constant Memory_Stream.Stream_Access :=
-                                                    new Memory_Stream.Memory_Buffer_Stream
-                                                      (MaxMessageLength);
+                           Number : Child_Number;
+                           CSet   : Child_Set;
+                           Buf    : constant Memory_Stream.Stream_Access :=
+                             new Memory_Stream.Memory_Buffer_Stream
+                               (Max_Message_Length);
                            Child_Address_Family : Family_Inet_4_6;
                            Child_Family_Number  : Unsigned_8;
                         begin
@@ -214,7 +217,8 @@ package body Network_Tree is
                               Child_Address_Family := Family_Inet6;
                            end if;
                            declare
-                              Child_Address : Sock_Addr_Type (Child_Address_Family);
+                              Child_Address :
+                                Sock_Addr_Type (Child_Address_Family);
                            begin
                               Port_Type'Read (Buf, Child_Address.Port);
                               if Number = 2 then
@@ -241,7 +245,7 @@ package body Network_Tree is
                               Text_IO.Put_Line
                                 (Text_IO.Standard_Error,
                                  "Error when trying to add child: " &
-                                   Ada.Exceptions.Exception_Message (E));
+                                 Ada.Exceptions.Exception_Message (E));
                         end;
                      when Character'Pos ('>') =>
                         pragma Debug
@@ -250,19 +254,19 @@ package body Network_Tree is
                               "message is a genaric message to be passed on."));
                         Local_Message_Number := Local_Message_Number + 1;
                         declare
-                           Message_Message_Number               : Unsigned_16;
-                           Receive_Buf                          :
-                           constant Memory_Stream.Stream_Access :=
-                                                                    new Memory_Stream.Memory_Buffer_Stream
-                                                                      (MaxMessageLength);
-                           Send_Buf                             : constant Memory_Stream.Stream_Access :=
-                                                                    new Memory_Stream.Memory_Buffer_Stream
-                                                                      (MaxMessageLength);
-                           Destinations                         : Child_Set;
-                           Destination_Count                    : Child_Number;
-                           Outbound_Message                     :
-                           Stream_Element_Array (1 .. MaxMessageLength);
-                           Outbound_Message_Length              : Stream_Element_Offset;
+                           Message_Message_Number : Unsigned_16;
+                           Receive_Buf :
+                             constant Memory_Stream.Stream_Access :=
+                             new Memory_Stream.Memory_Buffer_Stream
+                               (Max_Message_Length);
+                           Send_Buf : constant Memory_Stream.Stream_Access :=
+                             new Memory_Stream.Memory_Buffer_Stream
+                               (Max_Message_Length);
+                           Destinations      : Child_Set;
+                           Destination_Count : Child_Number;
+                           Outbound_Message  :
+                             Stream_Element_Array (1 .. Max_Message_Length);
+                           Outbound_Message_Length : Stream_Element_Offset;
                         begin
                            Memory_Stream.Write
                              (Memory_Stream.Memory_Buffer_Stream
@@ -277,10 +281,10 @@ package body Network_Tree is
                                 (Text_IO.Put_Line
                                    (Text_IO.Standard_Error,
                                     "Messages arriving in wrong order." &
-                                      " Expected message number " &
-                                      Local_Message_Number'Image &
-                                      ", got message number " &
-                                      Message_Message_Number'Image & "."));
+                                    " Expected message number " &
+                                    Local_Message_Number'Image &
+                                    ", got message number " &
+                                    Message_Message_Number'Image & "."));
                               null;
                            end if;
                            Stream_Element'Write (Send_Buf, Msg (Msg'First));
@@ -288,13 +292,19 @@ package body Network_Tree is
                              (Send_Buf,
                               Local_Message_Number); --Might need rewriting for message order handling
                            Stream_Element_Array'Write
-                             (Send_Buf, Msg (Msg'First + 1 + 2 .. Msg'First + MsgLen));
+                             (Send_Buf,
+                              Msg (Msg'First + 1 + 2 .. Msg'First + MsgLen));
                            pragma Debug
                              (Text_IO.Put
                                 (Text_IO.Standard_Error,
-                                 "Message received (without metainfo) is "));
+                                 "Message received (without metainfo) is '" &
+                                 Image
+                                   (Msg
+                                      (Msg'First + 3 .. Msg'First + MsgLen))));
                            Text_IO.Put
-                             (Image (Msg (Msg'First + 1 + 2 .. Msg'First + MsgLen)));
+                             (Message_File,
+                              Image
+                                (Msg (Msg'First + 3 .. Msg'First + MsgLen)));
                            Memory_Stream.Read
                              (Memory_Stream.Memory_Buffer_Stream
                                 (Send_Buf.all),
@@ -327,11 +337,11 @@ package body Network_Tree is
                           (Text_IO.Put_Line
                              (Text_IO.Standard_Error,
                               "Unrecognised message type. Message is " &
-                                Image (Msg)));
+                              Image (Msg)));
                   end case;
                end;
                declare
-                  Outbound : Stream_Element_Array (1 .. MaxMessageLength);
+                  Outbound : Stream_Element_Array (1 .. Max_Message_Length);
                begin
                   pragma Debug
                     (Text_IO.Put_Line
@@ -364,30 +374,33 @@ package body Network_Tree is
 
    task body Server is
       ListeningSocket  : Socket_Type;
-      ListeningAddress : Sock_Addr_Type (Family);
+      ListeningAddress : Sock_Addr_Type (Package_Default_Network_Family);
    begin
       pragma Debug
         (Text_IO.Put_Line
            (Text_IO.Standard_Error, "Server thread starting..."));
       Create_Socket
-        (ListeningSocket, Family, Socket_Datagram, IP_Protocol_For_UDP_Level);
+        (ListeningSocket, Package_Default_Network_Family, Socket_Datagram,
+         IP_Protocol_For_UDP_Level);
       pragma Debug
         (Text_IO.Put_Line
            (Text_IO.Standard_Error,
-            "Socket created, with family=" & Family'Image & "."));
+            "Socket created, with family=" &
+            Package_Default_Network_Family'Image & "."));
       ListeningAddress.Addr :=
-        (if Family = Family_Inet then Any_Inet_Addr else Any_Inet6_Addr);
-      ListeningAddress.Port := Port;
+        (if Package_Default_Network_Family = Family_Inet then Any_Inet_Addr
+         else Any_Inet6_Addr);
+      ListeningAddress.Port := Package_Default_Port;
       Bind_Socket (ListeningSocket, ListeningAddress);
       pragma Debug
         (Text_IO.Put_Line
            (Text_IO.Standard_Error,
             "Socket bound to address " & Image (ListeningAddress) &
-              ". Starting listening loop."));
+            ". Starting listening loop."));
       loop
          declare
             TalkingAddress : Sock_Addr_Type;
-            Message        : Stream_Element_Array (1 .. MaxMessageLength);
+            Message        : Stream_Element_Array (1 .. Max_Message_Length);
             MessageLength  : Stream_Element_Offset;
          begin
             Receive_Socket
@@ -425,10 +438,10 @@ package body Network_Tree is
    task body Client_Thread is
       package Queue_Interface is new Ada.Containers
         .Synchronized_Queue_Interfaces
-          (Element_Type => Sock_Addr_Type);
+        (Element_Type => Sock_Addr_Type);
       package Address_Queues is new Ada.Containers
         .Unbounded_Synchronized_Queues
-          (Queue_Interface);
+        (Queue_Interface);
       Queue : Address_Queues.Queue;
 
       task Server_Selector is
@@ -439,16 +452,16 @@ package body Network_Tree is
       task body Server_Selector is
          -- The string to send to ask for the number of connected children
          Query_String : constant Stream_Element_Array :=
-                          (1 => Character'Pos ('?'));
+           (1 => Character'Pos ('?'));
          -- The string to send to ask to join the server (needs to be constucted using the port number provided in the package instantiation)
-         Join_String  : Stream_Element_Array (1 .. MaxMessageLength);
+         Join_String : Stream_Element_Array (1 .. Max_Message_Length);
          -- A memory_stream used to construct the previous variable (needs to be deallocated)
-         Buf          : constant Memory_Stream.Stream_Access :=
-                          new Memory_Stream.Memory_Buffer_Stream (MaxMessageLength);
+         Buf : constant Memory_Stream.Stream_Access :=
+           new Memory_Stream.Memory_Buffer_Stream (Max_Message_Length);
          -- The length of the join request. Gets set when the join request is sent.
          Join_String_Length : Stream_Element_Offset;
          -- A Selector for listening to multiple sockets at once.
-         Selector     : Selector_Type;
+         Selector : Selector_Type;
 
          Max_Retries : constant Integer := 5;
          type Connection_Retry_Count is range 1 .. Max_Retries;
@@ -464,8 +477,10 @@ package body Network_Tree is
               (Text_IO.Standard_Error, "Server_Selector thread starting..."));
          -- prepare the join request string
          String'Write (Buf, "j");
-         Unsigned_8'Write (Buf, (if Family = Family_Inet then 4 else 6));
-         Port_Type'Write (Buf, Port);
+         Unsigned_8'Write
+           (Buf,
+            (if Package_Default_Network_Family = Family_Inet then 4 else 6));
+         Port_Type'Write (Buf, Package_Default_Port);
          Memory_Stream.Read
            (Memory_Stream.Memory_Buffer_Stream (Buf.all), Join_String,
             Join_String_Length);
@@ -474,7 +489,7 @@ package body Network_Tree is
          pragma Debug
            (Text_IO.Put_Line
               ("Join request string is " & '"' & Image (Join_String) & '"' &
-                 "."));
+               "."));
 
          Create_Selector (Selector);
 
@@ -547,7 +562,7 @@ package body Network_Tree is
                                 (Text_IO.Put_Line
                                    (Text_IO.Standard_Error,
                                     "Connection timed out on socket " &
-                                      Image (Socket_To_Read)));
+                                    Image (Socket_To_Read)));
                            end if;
                         end if;
                      end loop;
@@ -559,16 +574,16 @@ package body Network_Tree is
                   case Status is
                      when Aborted =>
                         exit;
-                        when Expired =>
+                     when Expired =>
                         null;
                      when Completed =>
                         -- parse the response(s).
                         while not Is_Empty (R_Set) loop
                            Get (R_Set, Socket_To_Read);
                            declare
-                              Addr           : Sock_Addr_Type;
-                              Message        :
-                              Stream_Element_Array (1 .. MaxMessageLength);
+                              Addr    : Sock_Addr_Type;
+                              Message :
+                                Stream_Element_Array (1 .. Max_Message_Length);
                               Message_Length : Stream_Element_Offset;
                            begin
                               Receive_Socket
@@ -578,7 +593,7 @@ package body Network_Tree is
                                 (Text_IO.Put
                                    (Text_IO.Standard_Error,
                                     "Connected to server at " & Image (Addr) &
-                                      "?"));
+                                    "?"));
                               exit Reconnect_Loop when Message_Length >= 2 and
                                 Message (1) = Character'Pos ('o') and
                                 Message (2) = Character'Pos ('k');
@@ -587,9 +602,9 @@ package body Network_Tree is
                                    (Text_IO.Standard_Error, "No."));
                               if
                                 (Message_Length >= 3 and
-                                   Message (1) = Character'Pos ('e') and
-                                     Message (2) = Character'Pos ('r') and
-                                     Message (3) = Character'Pos ('r'))
+                                 Message (1) = Character'Pos ('e') and
+                                 Message (2) = Character'Pos ('r') and
+                                 Message (3) = Character'Pos ('r'))
                               then
                                  pragma Debug
                                    (Text_IO.Put_Line
@@ -597,8 +612,8 @@ package body Network_Tree is
                                        "Our join request was denied."));
                                  for I in Connections_By_Retry_Count'Range loop
                                     if Is_Set
-                                      (Connections_By_Retry_Count (I),
-                                       Socket_To_Read)
+                                        (Connections_By_Retry_Count (I),
+                                         Socket_To_Read)
                                     then
                                        Clear
                                          (Connections_By_Retry_Count (I),
@@ -609,14 +624,14 @@ package body Network_Tree is
                                  end loop;
                               else
                                  declare
-                                    Flags                                : Unsigned_16;
-                                    Number                               : Unsigned_16;
-                                    Servers_Children                     : Child_Set;
-                                    Buf                                  :
-                                    constant Memory_Stream.Stream_Access :=
-                                                                             new Memory_Stream.Memory_Buffer_Stream
-                                                                               (MaxMessageLength);
-                                    Transmitted_Data                     : Stream_Element_Offset;
+                                    Flags            : Unsigned_16;
+                                    Number           : Unsigned_16;
+                                    Servers_Children : Child_Set;
+                                    Buf :
+                                      constant Memory_Stream.Stream_Access :=
+                                      new Memory_Stream.Memory_Buffer_Stream
+                                        (Max_Message_Length);
+                                    Transmitted_Data : Stream_Element_Offset;
                                  begin
                                     Memory_Stream.Write
                                       (Memory_Stream.Memory_Buffer_Stream
@@ -640,12 +655,12 @@ package body Network_Tree is
                                             (Servers_Children (2).Addr,
                                              Servers_Children (2).Port);
                                           for I in Connections_By_Retry_Count'
-                                          Range
+                                            Range
                                           loop
                                              if Is_Set
-                                               (Connections_By_Retry_Count
-                                                  (I),
-                                                Socket_To_Read)
+                                                 (Connections_By_Retry_Count
+                                                    (I),
+                                                  Socket_To_Read)
                                              then
                                                 Clear
                                                   (Connections_By_Retry_Count
@@ -678,7 +693,7 @@ package body Network_Tree is
             Text_IO.Put_Line
               (Text_IO.Standard_Error,
                "Server connection thread error:" &
-                 Ada.Exceptions.Exception_Message (E));
+               Ada.Exceptions.Exception_Message (E));
       end Server_Selector;
 
    begin
