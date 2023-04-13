@@ -14,7 +14,13 @@ project Build_Network is
    end Compiler;
 
    package Binder is
-      for Switches ("ada") use ("-xdr");
+      Version := Build_Network'Toolchain_Version ("Ada");
+      case Version is
+         when "gnat-12" =>
+            for Switches ("ada") use ("-xdr");
+         when others =>
+            null;
+      end case;
    end Binder;
 
    package Linker is
