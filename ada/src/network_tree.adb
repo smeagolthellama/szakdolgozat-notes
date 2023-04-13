@@ -140,7 +140,8 @@ package body Network_Tree is
                      Image (Address) & ", '" &
                      Image
                        (Message
-                          (Message'First .. Message'First + MessageLength)) &
+                          (Message'First ..
+                               Message'First + MessageLength - 1)) &
                      "' ," & MessageLength'Image & ") called."));
                Socket := Sock;
                Msg    := Message;
@@ -209,7 +210,7 @@ package body Network_Tree is
                            Children.Get_Children (Number, CSet);
                            Memory_Stream.Write
                              (Memory_Stream.Memory_Buffer_Stream (Buf.all),
-                              Msg (Msg'First + 1 .. Msg'First + MsgLen));
+                              Msg (Msg'First + 1 .. Msg'First + MsgLen - 1));
                            Unsigned_8'Read (Buf, Child_Family_Number);
                            if Child_Family_Number = 4 then
                               Child_Address_Family := Family_Inet;
@@ -271,7 +272,7 @@ package body Network_Tree is
                            Memory_Stream.Write
                              (Memory_Stream.Memory_Buffer_Stream
                                 (Receive_Buf.all),
-                              Msg (Msg'First + 1 .. Msg'First + MsgLen));
+                              Msg (Msg'First + 1 .. Msg'First + MsgLen - 1));
                            Unsigned_16'Read
                              (Receive_Buf, Message_Message_Number);
                            if Message_Message_Number /= Local_Message_Number
@@ -293,18 +294,22 @@ package body Network_Tree is
                               Local_Message_Number); --Might need rewriting for message order handling
                            Stream_Element_Array'Write
                              (Send_Buf,
-                              Msg (Msg'First + 1 + 2 .. Msg'First + MsgLen));
+                              Msg
+                                (Msg'First + 1 + 2 .. Msg'First + MsgLen - 1));
                            pragma Debug
-                             (Text_IO.Put
+                             (Text_IO.Put_Line
                                 (Text_IO.Standard_Error,
                                  "Message received (without metainfo) is '" &
                                  Image
                                    (Msg
-                                      (Msg'First + 3 .. Msg'First + MsgLen))));
+                                      (Msg'First + 3 ..
+                                           Msg'First + MsgLen - 1)) &
+                                 "'"));
                            Text_IO.Put
                              (Message_File,
                               Image
-                                (Msg (Msg'First + 3 .. Msg'First + MsgLen)));
+                                (Msg
+                                   (Msg'First + 3 .. Msg'First + MsgLen - 1)));
                            Memory_Stream.Read
                              (Memory_Stream.Memory_Buffer_Stream
                                 (Send_Buf.all),
