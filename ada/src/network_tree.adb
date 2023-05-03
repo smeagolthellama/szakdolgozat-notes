@@ -11,19 +11,11 @@ with Memory_Stream;
 
 with Text_IO;
 with Network_Children;
+with Network_Utility_Functions;
 
 package body Network_Tree is
    use Network_Children;
-   function Image (Arr : Stream_Element_Array) return String is
-      String_Index  : Integer                  := 1;
-      Return_String : String (1 .. Arr'Length) := (others => ' ');
-   begin
-      for I in Arr'Range loop
-         Return_String (String_Index) := Character'Val (Arr (I));
-         String_Index                 := String_Index + 1;
-      end loop;
-      return Return_String;
-   end Image;
+   use Network_Utility_Functions;
 
    Local_Message_Number : Unsigned_16 := 0;
 
