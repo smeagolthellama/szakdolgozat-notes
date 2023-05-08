@@ -2,7 +2,7 @@ project Build_Network is
 
    for Source_Dirs use ("src");
    for Object_Dir use "obj";
-   for Main use ("build.adb");
+   for Main use ("build.adb","map.adb");
 
    package Ide is
       for Vcs_Kind use "git";
