@@ -1,0 +1,6 @@
+ada/tree_mapper/query_tree
+*.bak
+*.log
+*.o
+*_xdr.c
+ada/tree_mapper/data_types.h
