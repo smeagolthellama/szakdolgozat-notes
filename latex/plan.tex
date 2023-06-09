@@ -4,13 +4,23 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage{tikz}
-\usetikzlibrary{snakes,arrows,shapes}
+\usetikzlibrary{arrows,shapes}
 \usepackage{amsmath}
+\usepackage{minted}
+\usepackage[breakable,minted]{tcolorbox}
 %
 \setmainfont{TeX Gyre Bonum}
 \setsansfont{TeX Gyre Heros}
 
-\submityear{2022}
+\newtcbinputlisting{\mylisting}[2][]{%
+  breakable,
+  listing only,
+  listing file=#2,
+  minted language=Ada,
+  #1%
+}
+
+\submityear{2024}
 \titleHU{Elosztott h\'al\'ozatokon t\"{o}rt\'en\H{o} adatok \'el\H{o} k\"{o}zvet\'it\'es\'ere val\'o protokoll tervez\'ese}
 \titleEN{Plan for a protocol for the live transmission of data over distributed networks}
 \titleRO{Planificarea unui protocol pentru
@@ -25,7 +35,7 @@ re\c{t}ele ditribuite}
 Requirements for a protocol for the streaming of data from a single
 authoratative source to multiple destinations in a distributed,
 peer-to-peer manner, with an emphasis placed on the minimization of
-needed infrastructure, security, and non-repudiation of data.
+needed infrastructure, security, and non-repudiation of data. An early prototype that demonstrates some, but not all, of the ideas is also provided.
 \end{abstractEN}
 \maketitle
 \tableofcontents
