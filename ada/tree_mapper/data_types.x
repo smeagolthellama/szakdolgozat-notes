@@ -1,4 +1,4 @@
-const CHILD_NUMBER = 3;
+const CHILD_NUMBER = 2;
 
 typedef unsigned int uint32;
 typedef unsigned char uint8;
@@ -10,45 +10,17 @@ enum family_type {
   FAMILY_UNSPEC = 3
 };
 
-enum child_index {
-  CHILD_1 = 1,
-  CHILD_2 = 2,
-  CHILD_3 = 3
-};
-
-
-struct inet_addr_v4_type {
-  uint8 sin_v4[4];
-};
-
-struct inet_addr_v6_type {
-  uint8 sin_v6[16];
-};
-
 union inet_addr_type switch (family_type family) {
   case FAMILY_INET:
-    inet_addr_v4_type sin_v4;
+    opaque sin_v4[4];
   case FAMILY_INET6:
-    inet_addr_v6_type sin_v6;
-  default:
-    void;
-};
-
-struct inet_addr_bytes {
-  uint8 inet_addr_comp<>;
-};
-
-union my_inet_addr switch (family_type family) {
-  case FAMILY_INET:
-    inet_addr_v4_type sin_v4;
-  case FAMILY_INET6:
-    inet_addr_v6_type sin_v6;
+    opaque sin_v6[16];
   default:
     void;
 };
 
 struct address_and_port{
-  my_inet_addr addr;
+  inet_addr_type addr;
   unsigned int port;
 };
 

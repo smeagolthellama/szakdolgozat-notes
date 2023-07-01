@@ -54,11 +54,13 @@ int main(int argc, char *argv[]) {
   child_set children;
   memset(&children, 0, sizeof(children));
   XDR xdr;
-  xdrmem_create(&xdr, buf, num_bytes, XDR_DECODE);
+  xdrmem_create(&xdr, buf, BUF_SIZE, XDR_DECODE);
   if (!xdr_child_set(&xdr, &children)) {
-    fprintf(stderr, "Error: failed to parse response\n");
+    fprintf(stderr, "Error: failed to parse response. xdr.x_handy is %d\n",xdr.x_handy);
     return 1;
   }
+
+  printf("xdr.x_handy is %d\n",xdr.x_handy);
 
   // print parsed data
   for (int i = 0; i < CHILD_NUMBER; i++) {
@@ -69,12 +71,12 @@ int main(int argc, char *argv[]) {
         break;
       case FAMILY_INET:{
         char inet_addr_str[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &(child->sock_addr_type_u.anp4.addr.my_inet_addr_u.sin_v4.sin_v4), inet_addr_str, INET_ADDRSTRLEN);
+        inet_ntop(AF_INET, &(child->sock_addr_type_u.anp4.addr.inet_addr_type_u.sin_v4), inet_addr_str, INET_ADDRSTRLEN);
         printf("Child %d: IPv4 socket, address = %s, port = %u\n", i+1, inet_addr_str, ntohs(child->sock_addr_type_u.anp4.port));
         break;}
       case FAMILY_INET6:{
         char inet6_addr_str[INET6_ADDRSTRLEN];
-        inet_ntop(AF_INET6, &(child->sock_addr_type_u.anp6.addr.my_inet_addr_u.sin_v6.sin_v6), inet6_addr_str, INET6_ADDRSTRLEN);
+        inet_ntop(AF_INET6, &(child->sock_addr_type_u.anp6.addr.inet_addr_type_u.sin_v6), inet6_addr_str, INET6_ADDRSTRLEN);
         printf("Child %d: IPv6 socket, address = %s, port = %u\n", i+1, inet6_addr_str, ntohs(child->sock_addr_type_u.anp6.port));
         break;}
       default:
