@@ -77,8 +77,10 @@ begin
                Address_To_Try  : GNAT.Sockets.Inet_Addr_Type;
                Port_To_Try     : GNAT.Sockets.Port_Type;
             begin
-               Parse_Address_And_Port (Argument, Port, Address_To_Try, Port_To_Try);
-               My_Tree.Connect_To_Server (Address_To_Try, Port_To_Try);
+               if Argument'Length /= 0 then
+                  Parse_Address_And_Port (Argument, Port, Address_To_Try, Port_To_Try);
+                  My_Tree.Connect_To_Server (Address_To_Try, Port_To_Try);
+               end if;
             exception
                when E : Format_Error =>
                   Put_Line

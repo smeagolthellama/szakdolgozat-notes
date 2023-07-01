@@ -20,7 +20,8 @@ package body Network_Utility_Functions is
       Parsed_Port    : out GNAT.Sockets.Port_Type)
    is
    begin
-      pragma Debug (Put_Line (Standard_Error, "Parsing '" & In_Str & "'."));
+      pragma Debug (Put_Line (Standard_Error, "Parsing '" & In_Str &
+                      "' (of length " & In_Str'Length'Image & ")."));
       if In_Str'Length /= 0 then
          if GNAT.Sockets.Is_IPv4_Address (In_Str)
            or else GNAT.Sockets.Is_IPv6_Address (In_Str)
