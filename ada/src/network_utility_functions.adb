@@ -1,6 +1,6 @@
 with Ada.Exceptions;
-with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Debug; use Debug;
 
 package body Network_Utility_Functions is
    function Image (Arr : Stream_Element_Array) return String is
@@ -20,8 +20,7 @@ package body Network_Utility_Functions is
       Parsed_Port    : out GNAT.Sockets.Port_Type)
    is
    begin
-      pragma Debug (Put_Line (Standard_Error, "Parsing '" & In_Str &
-                      "' (of length " & In_Str'Length'Image & ")."));
+      Debug.Handle_Event(Debug.Parse_Addr_Port,In_Str,In_Str'Length'Image);
       if In_Str'Length /= 0 then
          if GNAT.Sockets.Is_IPv4_Address (In_Str)
            or else GNAT.Sockets.Is_IPv6_Address (In_Str)

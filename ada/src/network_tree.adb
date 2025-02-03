@@ -9,15 +9,65 @@ with Interfaces; use Interfaces;
 
 with Memory_Stream;
 
-with Text_IO;
 with Network_Children;
 with Network_Utility_Functions;
+
+with Debug;
 
 package body Network_Tree is
    use Network_Children;
    use Network_Utility_Functions;
+   use Debug;
 
    Local_Message_Number : Unsigned_16 := 0;
+
+   procedure Handle_Join_Request(
+      Msg    : Stream_Element_Array;
+      MsgLen : Stream_Element_Offset;
+      Str    : Memory_Stream.Stream_Access :=
+                 new Memory_Stream.Memory_Buffer_Stream (Max_Message_Length)
+   ) is
+       Number               : Child_Number;
+       CSet                 : Child_Set;
+       Buf                  : constant Memory_Stream.Stream_Access :=
+                                new Memory_Stream.Memory_Buffer_Stream
+                                  (Max_Message_Length);
+       Child_Address_Family : Family_Inet_4_6;
+       Child_Family_Number  : Unsigned_8;
+   begin
+       Children.Get_Children (Number, CSet);
+       Memory_Stream.Write
+         (Memory_Stream.Memory_Buffer_Stream (Buf.all),
+          Msg (Msg'First + 1 .. Msg'First + MsgLen - 1));
+       Unsigned_8'Read (Buf, Child_Family_Number);
+       if Child_Family_Number = 4 then
+          Child_Address_Family := Family_Inet;
+       else
+          Child_Address_Family := Family_Inet6;
+       end if;
+       declare
+          Child_Address :
+          Sock_Addr_Type (Child_Address_Family);
+       begin
+          Port_Type'Read (Buf,Child_Address.Port);
+          if Number = 2 then
+	     Debug.Handle_Event(Join_Request_Denied);
+             String'Write (Str, "err");
+          else
+	     Debug.Handle_Event(Join_Request_Accepted);
+             Children.Add_Child (Child => Child_Address);
+             String'Write (Str, "ok");
+             Unsigned_16'Write
+               (Str, Local_Message_Number);
+          end if;
+       end;
+       Memory_Stream.Free (Buf);
+    exception
+       when E : Constraint_Error =>
+          String'Write (Str, "err");
+          Memory_Stream.Free (Buf);
+          Debug.Handle_Event(ERR_Exception, "Handle_Join_Request", Ada.Exceptions.Exception_Information(E));
+   end Handle_Join_Request;
 
    task Request_Handler is
       entry New_Request
@@ -34,9 +84,7 @@ package body Network_Tree is
       Str    : constant Memory_Stream.Stream_Access :=
                  new Memory_Stream.Memory_Buffer_Stream (Max_Message_Length);
    begin
-      pragma Debug
-        (Text_IO.Put_Line
-           (Text_IO.Standard_Error, "Request_Handler starting..."));
+      Debug.Handle_Event(Routine_Called, "Request_Handler");
       loop
          select
             accept New_Request
@@ -44,16 +92,15 @@ package body Network_Tree is
                Message       : Stream_Element_Array;
                MessageLength : Stream_Element_Offset)
             do
-               pragma Debug
-                 (Text_IO.Put_Line
-                    (Text_IO.Standard_Error,
-                     "Request_Handler.new_Request(" & Image (Sock) & "," &
-                       Image (Address) & ", '" &
-                       Image
-                       (Message
-                            (Message'First ..
-                                 Message'First + MessageLength - 1)) &
-                         "' ," & MessageLength'Image & ") called."));
+	       Debug.Handle_Event(
+                       Routine_Called,
+		       "Request_Handler.New_Request",
+		       Image(Sock),
+		       Image(Address),
+		       Image(
+			       Message(Message'First .. Message'First + MessageLength - 1)
+			       ),
+		       MessageLength'Image );
                Socket := Sock;
                Msg    := Message;
                MsgLen := MessageLength;
@@ -63,17 +110,10 @@ package body Network_Tree is
                declare
                   Message_Type : constant Unsigned_8 := Unsigned_8 (Msg (1));
                begin
-                  pragma Debug
-                    (Text_IO.Put_Line
-                       (Text_IO.Standard_Error,
-                        "message_type is " & Message_Type'Image & " ('" &
-                          Character'Val (Message_Type) & "')"));
+		  Debug.Handle_Event(Debug.Message_Type_Selector, Message_Type'Image, Character'Val(Message_Type)'Image);
                   case Message_Type is
                      when Character'Pos ('?') =>
-                        pragma Debug
-                          (Text_IO.Put_Line
-                             (Text_IO.Standard_Error,
-                              "message identified as query."));
+			Debug.Handle_Event(Message_Type_Query);
                         declare
                            Number : Child_Number;
                            CSet   : Child_Set;
@@ -83,66 +123,10 @@ package body Network_Tree is
                            Child_Set'Write (Str, CSet);
                         end;
                      when Character'Pos ('j') =>
-                        pragma Debug
-                          (Text_IO.Put_Line
-                             (Text_IO.Standard_Error,
-                              "message identified as a join request."));
-                        declare
-                           Number               : Child_Number;
-                           CSet                 : Child_Set;
-                           Buf                  : constant Memory_Stream.Stream_Access :=
-                                                    new Memory_Stream.Memory_Buffer_Stream
-                                                      (Max_Message_Length);
-                           Child_Address_Family : Family_Inet_4_6;
-                           Child_Family_Number  : Unsigned_8;
-                        begin
-                           Children.Get_Children (Number, CSet);
-                           Memory_Stream.Write
-                             (Memory_Stream.Memory_Buffer_Stream (Buf.all),
-                              Msg (Msg'First + 1 .. Msg'First + MsgLen - 1));
-                           Unsigned_8'Read (Buf, Child_Family_Number);
-                           if Child_Family_Number = 4 then
-                              Child_Address_Family := Family_Inet;
-                           else
-                              Child_Address_Family := Family_Inet6;
-                           end if;
-                           declare
-                              Child_Address :
-                              Sock_Addr_Type (Child_Address_Family);
-                           begin
-                              Port_Type'Read (Buf,Child_Address.Port);
-                              if Number = 2 then
-                                 pragma Debug
-                                   (Text_IO.Put_Line
-                                      (Text_IO.Standard_Error,
-                                       "Join request denied"));
-                                 String'Write (Str, "err");
-                              else
-                                 pragma Debug
-                                   (Text_IO.Put_Line
-                                      (Text_IO.Standard_Error,
-                                       "Join request accepted"));
-                                 Children.Add_Child (Child => Child_Address);
-                                 String'Write (Str, "ok");
-                                 Unsigned_16'Write
-                                   (Str, Local_Message_Number);
-                              end if;
-                           end;
-                           Memory_Stream.Free (Buf);
-                        exception
-                           when E : Constraint_Error =>
-                              String'Write (Str, "err");
-                              Memory_Stream.Free (Buf);
-                              Text_IO.Put_Line
-                                (Text_IO.Standard_Error,
-                                 "Error when trying to add child: " &
-                                   Ada.Exceptions.Exception_Message (E));
-                        end;
+			Debug.Handle_Event(Message_Type_Join);
+                        Handle_Join_Request(Msg,MsgLen,Str);
                      when Character'Pos ('>') =>
-                        pragma Debug
-                          (Text_IO.Put_Line
-                             (Text_IO.Standard_Error,
-                              "message is a genaric message to be passed on."));
+			Debug.Handle_Event(Message_Type_Fwd);
                         Local_Message_Number := Local_Message_Number + 1;
                         declare
                            Message_Message_Number               : Unsigned_16;
@@ -167,14 +151,7 @@ package body Network_Tree is
                            if Message_Message_Number /= Local_Message_Number
                            then
                               -- TODO: handle wrong order
-                              pragma Debug
-                                (Text_IO.Put_Line
-                                   (Text_IO.Standard_Error,
-                                    "Messages arriving in wrong order." &
-                                      " Expected message number " &
-                                      Local_Message_Number'Image &
-                                      ", got message number " &
-                                      Message_Message_Number'Image & "."));
+			      Debug.Handle_Event(ERR_Wrong_Order,Local_Message_Number'Image, Message_Message_Number'Image);
                               null;
                            end if;
                            Stream_Element'Write (Send_Buf, Msg (Msg'First));
@@ -185,16 +162,8 @@ package body Network_Tree is
                              (Send_Buf,
                               Msg
                                 (Msg'First + 1 + 2 .. Msg'First + MsgLen - 1));
-                           pragma Debug
-                             (Text_IO.Put_Line
-                                (Text_IO.Standard_Error,
-                                 "Message received (without metainfo) is '" &
-                                   Image
-                                   (Msg
-                                        (Msg'First + 3 ..
-                                             Msg'First + MsgLen - 1)) &
-                                     "'"));
-                           Text_IO.Put
+			   Debug.Handle_Event(Message_Contents, Image(Msg(Msg'First+3 .. Msg'First +MsgLen -1)));
+                           Ada.Text_IO.Put
                              (Message_File,
                               Image
                                 (Msg
@@ -227,27 +196,17 @@ package body Network_Tree is
                            end if;
                         end;
                      when others =>
-                        pragma Debug
-                          (Text_IO.Put_Line
-                             (Text_IO.Standard_Error,
-                              "Unrecognised message type. Message is " &
-                                Image (Msg)));
+			Debug.Handle_Event(ERR_Message_Type_Unknown,Image(Msg));
                   end case;
                end;
                declare
                   Outbound : Stream_Element_Array (1 .. Max_Message_Length);
                begin
-                  pragma Debug
-                    (Text_IO.Put_Line
-                       (Text_IO.Standard_Error,
-                        "Sending reply to sender of message."));
+		  Debug.Handle_Event(Sending_Reply);
                   Memory_Stream.Read
                     (Memory_Stream.Memory_Buffer_Stream (Str.all), Outbound,
                      MsgLen);
-                  pragma Debug
-                    (Text_IO.Put_Line
-                       (Text_IO.Standard_Error,
-                        "msgLen is " & MsgLen'Image & "."));
+		  Debug.Handle_Event(Sending_Length,MsgLen'Image);
                   if MsgLen = 0 then
                      Outbound (1) := 0;
                      MsgLen       := 1;
@@ -261,36 +220,25 @@ package body Network_Tree is
       end loop;
    exception
       when E : others =>
-         Text_IO.Put_Line
-           (Text_IO.Standard_Error,
-            "Mesenger thread error:" & Ada.Exceptions.Exception_Message (E));
+	      Debug.Handle_Event(ERR_Exception,"Request_Handler",Ada.Exceptions.Exception_Information(E));
    end Request_Handler;
 
    task body Server is
       ListeningSocket  : Socket_Type;
       ListeningAddress : Sock_Addr_Type (Package_Default_Network_Family);
    begin
-      pragma Debug
-        (Text_IO.Put_Line
-           (Text_IO.Standard_Error, "Server thread starting..."));
+	   Debug.Handle_Event(Thread_Start,"Server");
       Create_Socket
         (ListeningSocket, Package_Default_Network_Family, Socket_Datagram,
          IP_Protocol_For_UDP_Level);
-      pragma Debug
-        (Text_IO.Put_Line
-           (Text_IO.Standard_Error,
-            "Socket created, with family=" &
-              Package_Default_Network_Family'Image & "."));
+      Debug.Handle_Event(Socket_Created, Package_Default_Network_Family'Image);
       ListeningAddress.Addr :=
         (if Package_Default_Network_Family = Family_Inet then Any_Inet_Addr
          else Any_Inet6_Addr);
       ListeningAddress.Port := Package_Default_Port;
       Bind_Socket (ListeningSocket, ListeningAddress);
-      pragma Debug
-        (Text_IO.Put_Line
-           (Text_IO.Standard_Error,
-            "Socket bound to address " & Image (ListeningAddress) &
-              ". Starting listening loop."));
+      Debug.Handle_Event(Socket_Bound, Image(ListeningAddress));
+      Debug.Handle_Event(Loop_Start,"Listen");
       loop
          declare
             TalkingAddress : Sock_Addr_Type;
@@ -299,9 +247,7 @@ package body Network_Tree is
          begin
             Receive_Socket
               (ListeningSocket, Message, MessageLength, TalkingAddress);
-            pragma Debug
-              (Text_IO.Put_Line
-                 (Text_IO.Standard_Error, "listening loop got something."));
+	    Debug.Handle_Event(Listen_Loop_Recvd);
             Request_Handler.New_Request
               (Sock    => ListeningSocket, Address => TalkingAddress,
                Message => Message, MessageLength => MessageLength);
@@ -309,9 +255,7 @@ package body Network_Tree is
       end loop;
    exception
       when E : Socket_Error =>
-         Text_IO.Put_Line
-           (Text_IO.Standard_Error,
-            "Server thread error:" & Ada.Exceptions.Exception_Message (E));
+	Debug.Handle_Event(ERR_Exception, "Server", Ada.Exceptions.Exception_Message(E));
    end Server;
 
    task Client_Thread is
@@ -320,12 +264,7 @@ package body Network_Tree is
 
    procedure Connect_To_Server (Addr : Inet_Addr_Type; Port : Port_Type) is
    begin
-      pragma Debug
-        (Text_IO.Put_Line
-           (File => Text_IO.Standard_Error,
-            Item =>
-              "Connect_To_Server(" & Image (Value => Addr) & "," & Port'Image &
-              ") called."));
+      Debug.Handle_Event(Routine_Called, "Connect_To_Server", Image(Value=>Addr), Port'Image);
       Client_Thread.Try_New_Server (Addr, Port);
    end Connect_To_Server;
 
@@ -366,41 +305,29 @@ package body Network_Tree is
 
          use Ada.Containers;
       begin
-         pragma Debug
-           (Text_IO.Put_Line
-              (Text_IO.Standard_Error, "Server_Selector thread starting..."));
+         Debug.Handle_Event(Thread_Start, "Server_Selector");
          -- prepare the join request string
          String'Write (Buf, "j");
          Unsigned_8'Write
            (Buf,
             (if Package_Default_Network_Family = Family_Inet then 4 else 6));
-         --  Port_Type'Write (Buf, Package_Default_Port);
+         Port_Type'Write (Buf, Package_Default_Port);
          Memory_Stream.Read
            (Memory_Stream.Memory_Buffer_Stream (Buf.all), Join_String,
             Join_String_Length);
          Memory_Stream.Free (Buf);
-         -- save the join request string to a debugging log file (currently does not work as intended)
-         pragma Debug
-           (Text_IO.Put_Line
-              ("Join request string is " & '"' & Image (Join_String) & '"' &
-                 "."));
-
+         Debug.Handle_Event(Var_Is, "Join_String", Image(Join_String));
          Create_Selector (Selector);
 
          for I in Connections_By_Retry_Count'Range loop
             Sock.Empty (Connections_By_Retry_Count (I));
          end loop;
 
-         pragma Debug
-           (Text_IO.Put_Line
-              (Text_IO.Standard_Error, "Starting server connection loop..."));
+         Debug.Handle_Event(Loop_Start,"Server_Selector");
          loop
             Reconnect_Loop :
             loop
-               pragma Debug
-                 (Text_IO.Put_Line
-                    (Text_IO.Standard_Error,
-                     "Server connection loop checking for new servers on the queue..."));
+               Debug.Handle_Event(Condition_Check, "for new servers in the queue");
                while Queue.Current_Use > 0 loop
                   -- Add the new address to the set
                   declare
@@ -418,10 +345,7 @@ package body Network_Tree is
                      Set (Connections_By_Retry_Count (1), Server_Socket);
                   end;
                end loop;
-               pragma Debug
-                 (Text_IO.Put_Line
-                    (Text_IO.Standard_Error,
-                     "preparing selector to see if there are any answers from the servers"));
+               Debug.Handle_Event(Selector_Prepare);
                declare
                   R_Set          : Socket_Set_Type;
                   W_Set_Dummy    : Socket_Set_Type;
@@ -450,25 +374,19 @@ package body Network_Tree is
                            Clear
                              (Connections_By_Retry_Count (I), Socket_To_Read);
                            if I /= Connections_By_Retry_Count'Last then
-                              Set (R_Set, Socket_To_Read);
+                               Set (R_Set, Socket_To_Read);
                            else
-                              pragma Debug
-                                (Text_IO.Put_Line
-                                   (Text_IO.Standard_Error,
-                                    "Connection timed out on socket " &
-                                      Image (Socket_To_Read)));
+                               Debug.Handle_Event(Selector_Timeout,
+                                       Image (Socket_To_Read));
                            end if;
                         end if;
                      end loop;
                   end loop;
-                  pragma Debug
-                    (Text_IO.Put_Line
-                       (Text_IO.Standard_Error,
-                        "Selector returned status " & Status'Image));
+                  Debug.Handle_Event(Selector_Return, Status'Image);
                   case Status is
                      when Aborted =>
                         exit;
-                        when Expired =>
+                     when Expired =>
                         null;
                      when Completed =>
                         -- parse the response(s).
@@ -483,27 +401,18 @@ package body Network_Tree is
                               Receive_Socket
                                 (Socket_To_Read, Message, Message_Length, Addr,
                                  Wait_For_A_Full_Reception);
-                              pragma Debug
-                                (Text_IO.Put
-                                   (Text_IO.Standard_Error,
-                                    "Connected to server at " & Image (Addr) &
-                                      "?"));
+                              Debug.Handle_Event(Connection_Try, Image(Addr));
                               exit Reconnect_Loop when Message_Length >= 2 and
                                 Message (1) = Character'Pos ('o') and
                                 Message (2) = Character'Pos ('k');
-                              pragma Debug
-                                (Text_IO.Put_Line
-                                   (Text_IO.Standard_Error, "No."));
+                              Debug.Handle_Event(Connection_Fail, Image(Addr));
                               if
                                 (Message_Length >= 3 and
                                    Message (1) = Character'Pos ('e') and
                                      Message (2) = Character'Pos ('r') and
                                      Message (3) = Character'Pos ('r'))
                               then
-                                 pragma Debug
-                                   (Text_IO.Put_Line
-                                      (Text_IO.Standard_Error,
-                                       "Our join request was denied."));
+                                 Debug.Handle_Event(Join_Request_Denied);
                                  for I in Connections_By_Retry_Count'Range loop
                                     if Is_Set
                                       (Connections_By_Retry_Count (I),
@@ -596,7 +505,7 @@ package body Network_Tree is
                   end case;
                end;
             end loop Reconnect_Loop;
-            pragma Debug (Text_IO.Put_Line (Text_IO.Standard_Error, "Yes."));
+            Debug.Handle_Event(Connection_Success);
             select
                accept Reconnect;
             or
@@ -605,10 +514,7 @@ package body Network_Tree is
          end loop;
       exception
          when E : Socket_Error =>
-            Text_IO.Put_Line
-              (Text_IO.Standard_Error,
-               "Server connection thread error:" &
-                 Ada.Exceptions.Exception_Message (E));
+             Debug.Handle_Event(ERR_Exception,  "Server_Selector2", Ada.Exceptions.Exception_Information(E));
       end Server_Selector;
 
    begin
@@ -631,8 +537,6 @@ package body Network_Tree is
       end loop;
    exception
       when E : Socket_Error =>
-         Text_IO.Put_Line
-           (Text_IO.Standard_Error,
-            "Client thread error:" & Ada.Exceptions.Exception_Message (E));
+          Debug.Handle_Event(ERR_Exception, "Client_Thread", Ada.Exceptions.Exception_Information(E));
    end Client_Thread;
 end Network_Tree;

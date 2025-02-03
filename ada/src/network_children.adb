@@ -1,13 +1,10 @@
-with Text_IO;
+with Debug; use Debug;
 
 package body Network_Children is
    protected body Children is
       entry Add_Child (Child : Sock_Addr_Type) when not Locked is
       begin
-         pragma Debug
-           (Text_IO.Put_Line
-              (Text_IO.Standard_Error,
-               "Add_Child(" & Image (Child) & ") called."));
+	 Debug.Handle_Event(Routine_Called,"Add_Child", Image(Child));
          Locked       := True;
          Number       := Number + 1;
          Set (Number) := Child;
@@ -26,11 +23,7 @@ package body Network_Children is
             Set (1) := No_Sock_Addr;
          end if;
          C := Set;
-         pragma Debug
-           (Text_IO.Put_Line
-              (Text_IO.Standard_Error,
-               "Get_Children(" & N'Image & " (out), [" & Image (C (1)) &
-                 ", " & Image (C (2)) & "] (out)) called."));
+	 Debug.Handle_Event(Routine_Called,"Get_Children",N'Image,Image(C(1)),Image(C(2)));
          Locked := False;
       end Get_Children;
 
@@ -57,11 +50,7 @@ package body Network_Children is
             end if;
 
          end loop;
-         pragma Debug
-           (Text_IO.Put_Line
-              (Text_IO.Standard_Error,
-               "Remove_Child(" & Image (Child) & ", " & Status'Image &
-                 ") called"));
+	 Debug.Handle_Event(Routine_Called,"Remove_Child",Image(Child),Status'Image);
          Locked := False;
       end Remove_Child;
    end Children;
